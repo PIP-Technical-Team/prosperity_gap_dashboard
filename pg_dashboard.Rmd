@@ -194,7 +194,6 @@ dt_region[
 dt_region <- dt_region[
       !Region_code == "WLD"
     ]
-dt_region
 # Add global numbers
 global_summary <- dt_region[
   , 
@@ -218,7 +217,7 @@ dt_region <- rbindlist(
     global_region
   )
 )
-dt_region <- dt_region[, .(Region_code, Year, PG, PG_decomp, Inequality, Region_name)]
+dt_region <- dt_region[, .(Region_code, Year, PG, PG_decomp, Inequality, Mean, Region_name)]
 setorder(
   dt_region, Year
 )
@@ -454,7 +453,7 @@ title_function2 <- function(ind){
     "Prosperity Gap",
     "Mean", 
     "Mean - Bottom 40", 
-    "Inequality"
+    "(PG) Inequality"
   )
   
   title_use_vec <- c(
@@ -636,7 +635,9 @@ conditionalPanel(
     label    = "Select regional aggregates", 
     choices  = c(
       "All", 
-      dt_region$Region_name |> 
+      dt_region$Region_name[
+        !dt_region$Region_name == "Global"
+      ] |> 
         unique() |> 
         sort()
     ), 
@@ -672,7 +673,9 @@ conditionalPanel(
     "select_both_trend", 
     label    = "Select economies", 
     choices  = c(
-      dt_region$Region_name |> 
+      dt_region$Region_name[
+        !dt_region$Region_name == "Global"
+      ] |> 
         unique() |> sort(),
       dt_country$Country_name |> 
         unique() |> 
@@ -699,7 +702,7 @@ conditionalPanel(
             choices = c(
               "Prosperity Gap", 
               "Mean", 
-              "Inequality" 
+              "(PG) Inequality" 
              ),
             selected = "Prosperity Gap")
 )
@@ -712,7 +715,7 @@ conditionalPanel(
             choices = c(
               "Prosperity Gap", 
               "Mean", 
-              "Inequality" 
+              "(PG) Inequality" 
              ),
             selected = "Prosperity Gap")
 )
@@ -726,7 +729,7 @@ conditionalPanel(
               "Prosperity Gap", 
               "Mean", 
               "Mean - Bottom 40",
-              "Inequality" 
+              "(PG) Inequality" 
              ),
             selected = "Prosperity Gap")
 )
@@ -741,9 +744,9 @@ conditionalPanel(
             choices = c(
               "Prosperity Gap", 
               "Mean", 
-              "Inequality" 
+              "(PG) Inequality" 
              ),
-            selected = "Inequality")
+            selected = "Mean")
 )
 
 ## Select indicator fig 2
@@ -754,9 +757,9 @@ conditionalPanel(
             choices = c(
               "Prosperity Gap", 
               "Mean", 
-              "Inequality" 
+              "(PG) Inequality" 
              ),
-            selected = "Inequality")
+            selected = "Mean")
 )
 
 ## Select indicator fig 2
@@ -768,9 +771,9 @@ conditionalPanel(
               "Prosperity Gap", 
               "Mean", 
               "Mean - Bottom 40",
-              "Inequality" 
+              "(PG) Inequality" 
              ),
-            selected = "Inequality")
+            selected = "Mean")
 )
 
 # Log axes ---------------------------------------------------------------------
@@ -829,7 +832,7 @@ observeEvent(
   input$select_initial_year_trend, 
   {
     updated_choices <- dt_country[
-      Year > as.numeric(input$select_initial_year_trend), 
+      Year >= as.numeric(input$select_initial_year_trend), 
       unique(Year)
     ]
     updated_choices <- sort(updated_choices)
@@ -852,20 +855,20 @@ observeEvent(
 
 dt_trend_plot1 <- reactive({
 
-    # Names indicators
-    indicator_trend1 <- input$indicator_trend1_both
+
+  # If 'Regional aggregates' -----------------------------
+  if(input$plot_which_trend == "Regional aggregates"){
+    
+    indicator_trend1 <- input$indicator_trend1_regionalaggregates
     if(!indicator_trend1 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
     indicator_trend1 <- switch(
       indicator_trend1,
       "Prosperity Gap"   = "PG",
-      "Mean - Bottom 40" = "Mean_b40",
       "Mean"             = "Mean",
-      "Inequality"       = "Inequality"
+      "(PG) Inequality"       = "Inequality"
     )
     }
     
-  # If 'Regional aggregates' -----------------------------
-  if(input$plot_which_trend == "Regional aggregates"){
     dt_trend_plot1 <- copy(dt_region)
     dt_trend_plot1 <- dt_trend_plot1[!Region_name == "Global"]
     setnames(
@@ -880,7 +883,7 @@ dt_trend_plot1 <- reactive({
         paste0(
           "Economy: "                     , Economy, "\n",
           "Year: "                        , Year,
-          "\n"                            , input$indicator_trend1_both, ": ", round(IndicatorTrend1, 2)
+          "\n"                            , input$indicator_trend1_regionalaggregates, ": ", round(IndicatorTrend1, 2)
         )
       )
     ]
@@ -901,6 +904,18 @@ dt_trend_plot1 <- reactive({
   
   # If 'Selected economies' ------------------------------
   if(input$plot_which_trend == "Selected economies"){
+    
+    indicator_trend1 <- input$indicator_trend1_economies
+    if(!indicator_trend1 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    indicator_trend1 <- switch(
+      indicator_trend1,
+      "Prosperity Gap"   = "PG",
+      "Mean - Bottom 40" = "Mean_b40",
+      "Mean"             = "Mean",
+      "(PG) Inequality"       = "Inequality"
+    )
+    }
+    
     dt_trend_plot1 <- copy(dt_country)
     
     setnames(
@@ -915,7 +930,7 @@ dt_trend_plot1 <- reactive({
         paste0(
           "Economy: "                     , Economy, "\n",
           "Year: "                        , Year,
-          "\n"                            , input$indicator_trend1_both, ": ", round(IndicatorTrend1, 2)
+          "\n"                            , input$indicator_trend1_economies, ": ", round(IndicatorTrend1, 2)
         )
       )
     ]
@@ -931,6 +946,16 @@ dt_trend_plot1 <- reactive({
   
   # If 'Both' --------------------------------------------
   if(input$plot_which_trend == "Both"){
+        
+    indicator_trend1 <- input$indicator_trend1_both
+    if(!indicator_trend1 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    indicator_trend1 <- switch(
+      indicator_trend1,
+      "Prosperity Gap"   = "PG",
+      "Mean"             = "Mean",
+      "(PG) Inequality"       = "Inequality"
+    )
+    }
     
     dt_trend_c1 <- copy(dt_country)
     dt_trend_c1 <- dt_trend_c1[
@@ -975,6 +1000,13 @@ dt_trend_plot1 <- reactive({
     
     }
   
+  # Filter years
+  if(input$all_years_plot_trend == "Custom"){
+    
+    dt_trend_plot1 <- dt_trend_plot1[
+      Year >= as.numeric(input$select_initial_year_trend) & Year <= as.numeric(input$select_final_year_trend)
+    ]
+  }
   
   dt_trend_plot1
 
@@ -986,20 +1018,21 @@ dt_trend_plot1 <- reactive({
 
 dt_trend_plot2 <- reactive({
 
-    # Names indicators
-    indicator_trend2 <- input$indicator_trend2_both
-    if(!indicator_trend2 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
-    indicator_trend2 <- switch(
-      indicator_trend2,
-      "Prosperity Gap"   = "PG",
-      "Mean - Bottom 40" = "Mean_b40",
-      "Mean"             = "Mean",
-      "Inequality"       = "Inequality"
-    )
-    }
     
   # If 'Regional aggregates' -----------------------------
   if(input$plot_which_trend == "Regional aggregates"){
+    
+    indicator_trend2 <- input$indicator_trend2_regionalaggregates
+    if(!indicator_trend2 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    indicator_trend2 <- switch(
+      indicator_trend2,
+      "Prosperity Gap"        = "PG",
+      "Mean"                  = "Mean",
+      "(PG) Inequality"       = "Inequality"
+    )
+    }
+    
+    
     dt_trend_plot2 <- copy(dt_region)
     dt_trend_plot2 <- dt_trend_plot2[!Region_name == "Global"]
     setnames(
@@ -1014,7 +1047,7 @@ dt_trend_plot2 <- reactive({
         paste0(
           "Economy: "                     , Economy, "\n",
           "Year: "                        , Year,
-          "\n"                            , input$indicator_trend2_both, ": ", round(IndicatorTrend2, 2)
+          "\n"                            , input$indicator_trend2_regionalaggregates, ": ", round(IndicatorTrend2, 2)
         )
       )
     ]
@@ -1023,7 +1056,7 @@ dt_trend_plot2 <- reactive({
     if("All" %chin% input$select_regional_aggregates_trend){
       dt_trend_plot2
     } else {
-      dt_trend_plot2 <- dt_trend_plot1[
+      dt_trend_plot2 <- dt_trend_plot2[
         Economy %chin% input$select_regional_aggregates_trend
     ]
     }
@@ -1035,6 +1068,18 @@ dt_trend_plot2 <- reactive({
   
   # If 'Selected economies' ------------------------------
   if(input$plot_which_trend == "Selected economies"){
+    
+    indicator_trend2 <- input$indicator_trend2_economies
+    if(!indicator_trend2 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    indicator_trend2 <- switch(
+      indicator_trend2,
+      "Prosperity Gap"        = "PG",
+      "Mean - Bottom 40"      = "Mean_b40",
+      "Mean"                  = "Mean",
+      "(PG) Inequality"       = "Inequality"
+    )
+    }
+    
     dt_trend_plot2 <- copy(dt_country)
     
     setnames(
@@ -1049,7 +1094,7 @@ dt_trend_plot2 <- reactive({
         paste0(
           "Economy: "                     , Economy, "\n",
           "Year: "                        , Year,
-          "\n"                            , input$indicator_trend2_both, ": ", round(IndicatorTrend2, 2)
+          "\n"                            , input$indicator_trend2_economies, ": ", round(IndicatorTrend2, 2)
         )
       )
     ]
@@ -1063,27 +1108,36 @@ dt_trend_plot2 <- reactive({
   }
   
   
+    
   # If 'Both' --------------------------------------------
   if(input$plot_which_trend == "Both"){
+        
+    indicator_trend2 <- input$indicator_trend2_both
+    if(!indicator_trend2 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    indicator_trend2 <- switch(
+      indicator_trend2,
+      "Prosperity Gap"        = "PG",
+      "Mean"                  = "Mean",
+      "(PG) Inequality"       = "Inequality"
+    )
+    }
     
-    dt_trend_c1 <- copy(dt_country)
-    dt_trend_c1 <- dt_trend_c1[
+    dt_trend_c2 <- copy(dt_country)
+    dt_trend_c2 <- dt_trend_c2[
       , 
       .(Economy=Country_name, Year, PG, Inequality, Mean, Region_code, Survey_comparability)
     ]
-    dt_trend_r1 <- copy(dt_region)
-    dt_trend_r1 <- dt_trend_r1[
-      ! Region_name == "Global"
-    ]
-    dt_trend_r1 <- dt_trend_r1[
+    dt_trend_r2 <- copy(dt_region)
+    dt_trend_r2 <- dt_trend_r2[!Region_name == "Global"]
+    dt_trend_r2 <- dt_trend_r2[
       , 
       .(Economy=Region_name, Year, PG, Inequality, Mean, Region_code, Survey_comparability = 1L)
     ]
     
     dt_trend_plot2 <- rbindlist(
       list(
-        dt_trend_c1, 
-        dt_trend_r1
+        dt_trend_c2, 
+        dt_trend_r2
       )
     )
     
@@ -1111,6 +1165,13 @@ dt_trend_plot2 <- reactive({
     
     }
   
+    # Filter years
+  if(input$all_years_plot_trend == "Custom"){
+    
+    dt_trend_plot2 <- dt_trend_plot2[
+      Year >= as.numeric(input$select_initial_year_trend) & Year <= as.numeric(input$select_final_year_trend)
+    ]
+  }
   
   dt_trend_plot2
 
@@ -1130,10 +1191,18 @@ Column {.tabset .tabset-fade}
 
 
 
-
 ```{r}
 renderPlotly({
 
+  # give name
+  if(input$plot_which_trend == "Regional aggregates"){
+    ind_name <- input$indicator_trend1_regionalaggregates
+  } else if(input$plot_which_trend == "Selected economies"){
+    ind_name <- input$indicator_trend1_economies
+  } else {
+    ind_name <- input$indicator_trend1_both
+  }
+  
 
 dt_trend_plot1 <- dt_trend_plot1()
 # Create a subset with only the first points for each country
@@ -1210,7 +1279,7 @@ layout(
 
 tp1 <- layout(tp1,
             title = list(
-              text = paste("Figure 1:", title_function2(input$indicator_trend1_both), "over time"),
+              text = paste("Figure 1:", title_function2(ind_name), "over time"),
               titlefont = list(
                 size = 14
               )
@@ -1223,7 +1292,7 @@ tp1 <- layout(tp1,
               title = ""
             ),
             yaxis = list(
-              title = title_function2(input$indicator_trend1_both),
+              title = title_function2(ind_name),
               titlefont = list(size  = 12)
             )
 )
@@ -1255,7 +1324,15 @@ Column {.tabset .tabset}
 ```{r}
 renderPlotly({
 
-
+  # give name
+  if(input$plot_which_trend == "Regional aggregates"){
+    ind_name <- input$indicator_trend2_regionalaggregates
+  } else if(input$plot_which_trend == "Selected economies"){
+    ind_name <- input$indicator_trend2_economies
+  } else {
+    ind_name <- input$indicator_trend2_both
+  }
+  
 dt_trend_plot2 <- dt_trend_plot2()
 # Create a subset with only the first points for each country
 dt_trend_plot2[, rel_nudge_y := 0.1 * (max(IndicatorTrend2) - min(IndicatorTrend2)), by = Economy]
@@ -1330,7 +1407,7 @@ layout(
 
 tp2 <- layout(tp2,
             title = list(
-              text = paste("Figure 2:", title_function2(input$indicator_trend2_both), "over time"),
+              text = paste("Figure 2:", title_function2(ind_name), "over time"),
               titlefont = list(
                 size = 14
               )
@@ -1343,7 +1420,7 @@ tp2 <- layout(tp2,
               title = ""
             ),
             yaxis = list(
-              title = title_function2(input$indicator_trend2_both),
+              title = title_function2(ind_name),
               titlefont = list(size  = 12)
             )
 )
@@ -1354,6 +1431,316 @@ tp2
 
 })
 ```
+
+
+
+
+
+Decomposition of PG
+===========================================================
+
+
+Sidebar {.sidebar data-width=150}
+-----------------------------------------------------------------------
+
+
+```{r sidebar-barchart}
+
+# Select Indicator
+# radioButtons("indicator_barchart", 
+#             label = "Indicator:",
+#             choices = c(
+#               "Prosperity Gap"#,
+#               # "Mean", 
+#               # "Mean - Bottom 40", 
+#               #"Inequality"
+#             ),
+#             selected =  c(
+#               "Prosperity Gap"
+#             ))
+
+
+# radioButtons("region_or_countries", 
+#                    label = "Plot for regions or countries",  
+#                    choices = c(
+#                      "Regions", 
+#                      "Countries"
+#                    ), 
+#                    selected = c("Regions"))
+
+# conditionalPanel(
+#   condition = "input.region_or_countries == 'Countries'", 
+#   selectInput( "select_countries_barchart", 
+#                label    = "Select Countries", 
+#                choices  = c(
+#                  dt_country$Country_name |> 
+#                    unique() |> 
+#                    sort()
+#                ), 
+#                selected = c(
+#                  "Colombia", 
+#                  "Ghana", 
+#                  "Thailand", 
+#                  "Argentina"
+#                ), 
+#                multiple = TRUE
+#   )
+# )
+
+# conditionalPanel(
+#   condition = "input.region_or_countries == 'Regions'", 
+#   selectInput( "select_regions_barchart", 
+#                label    = "Select Regions", 
+#                choices  = c(
+#                  "All",
+#                  dt_region$Region_name |> 
+#                    unique() |> 
+#                    sort()
+#                ), 
+#                selected = c(
+#                  "All"
+#                ), 
+#                multiple = TRUE
+#   )
+# )
+  selectInput( "select_regions_barchart", 
+               label    = "Select Regions", 
+               choices  = c(
+                 "All",
+                 dt_region$Region_name |> 
+                   unique() |> 
+                   sort()
+               ), 
+               selected = c(
+                 "All"
+               ), 
+               multiple = TRUE
+  )
+
+radioButtons("all_years_barchart", 
+                   label = "Years selection",  
+                   choices = c(
+                     "All", 
+                     "Custom"
+                   ), 
+                   selected = c("All"))
+
+
+conditionalPanel(
+  condition = "input.all_years_barchart == 'Custom'",
+  selectInput("select_initial_year_barchart", 
+              label = "Initial Year:",
+              choices = dt_region$Year |> 
+                unique() |> 
+                sort(),
+              selected = dt_region$Year |> 
+                min(), 
+              multiple = FALSE)
+)
+
+conditionalPanel(
+  condition = "input.all_years_barchart == 'Custom' && input.all_years_barchart != null",
+  selectInput("select_final_year_barchart", 
+              label = "Final Year:",
+              choices = dt_region$Year |> 
+                unique() |> 
+                sort(),
+              selected = dt_region$Year |> 
+                max(), 
+              multiple = FALSE)
+)
+
+observeEvent(input$select_initial_year_table, 
+             {
+               updated_choices <- dt_region[
+                 Year >= as.numeric(input$select_initial_year_table), 
+                 unique(Year)
+               ]
+               updated_choices <- sort(updated_choices)
+               updateSelectInput(
+                 session, 
+                 "select_final_year_barchart", 
+                 choices = updated_choices, 
+                 selected = dt_region$Year |> max() 
+               )
+})
+
+
+# Render download button
+#downloadButton("downloadData", "Download CSV")
+
+downloadButtonRmd(
+  outputId = "DownloadButtonBarchart", 
+  label = "CSV"
+)
+
+
+```
+
+Column {.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+
+```{r data-barchart}
+
+dt_barchart <- reactive({
+  
+  indicator <- c("PG_decomp")
+  
+  # Region or countries ----
+  # if(input$region_or_countries == "Regions"){
+    dt_barchart <- copy(dt_region)
+    
+    # Filter
+    if(!"All" %chin% input$select_regions_barchart){
+      
+    dt_barchart <- dt_barchart[
+      Region_name %chin% input$select_regions_barchart
+    ]
+    
+    }
+    
+    setnames(
+      dt_barchart,
+      old = "Region_name",
+      new = "Group"
+    )  
+    
+
+  # # Indicator name ----
+  #   if(input$indicator_barchart == "Prosperity Gap"){
+  #   
+  #   indicator   <- c("PG_decomp")
+  #   
+  #   } else {
+  #     indicator <- c("Inequality")
+  #   }
+  
+  # Round to 2 decimal places ----
+    col_round <- c("PG_decomp", "Inequality")
+    dt_barchart[
+      ,
+      (col_round) := lapply(
+        .SD,
+        function(x) round(x, 2)
+      ),
+      .SDcols = col_round
+    ]
+
+  # Set indicator ----
+  setnames(
+    dt_barchart, 
+    new = "Indicator", 
+    old = indicator
+  )
+  
+   # Filter years ----
+  if(input$all_years_barchart == "Custom"){
+    
+    dt_barchart <- dt_barchart[
+      Year >= as.numeric(input$select_initial_year_barchart) & Year <= as.numeric(input$select_final_year_barchart)
+    ]
+    
+  } else{
+    dt_barchart
+  }
+
+    
+    # Step 1: Subset data for the first year
+    first_year_data <- dt_barchart[Year == min(dt_barchart$Year)]
+
+    # Step 2: Sort by indicator values
+    first_year_data <- first_year_data[order(Indicator)]
+
+    # Step 3: Extract ordered regions
+    ordered_regions <- unique(first_year_data$Group)
+
+    # Step 4: Convert Group into a factor with ordered levels
+    dt_barchart[, Group := factor(Group, levels = ordered_regions, ordered = TRUE)]
+
+  
+    dt_barchart
+  
+})
+
+
+```
+
+
+```{r plot-barchart}
+
+# renderTable({
+#   dt_barchart()
+# })
+renderHighchart({
+
+  dt        <- dt_barchart()
+  dt_global <- dt[
+    Group == "Global"
+  ]
+  dt        <- dt[
+    !Group == "Global"
+  ] 
+  
+  
+# Make Theme -------------------------------------------------------------------
+my_own_theme <- hc_theme(
+  colors = RColorBrewer::brewer.pal(name = "Dark2", n = length(dt$Group |> unique())),
+  chart = list(
+    backgroundColor = "white"
+  ),
+  title = list(
+    style = list(
+      color = "black",
+      fontFamily = "Lato"
+    )
+  ),
+  # subtitle = list(
+  #   style = list(
+  #     color = "#666666",
+  #     fontFamily = "Shadows Into Light"
+  #   )
+  # ),
+  legend = list(
+    itemStyle = list(
+      fontFamily = "Lato",
+      color = "#666666"
+    ),
+    itemHoverStyle = list(
+      color = "gray"
+    )
+  )
+)
+
+
+  
+  # Create stacked bar chart
+hchart(
+  dt,
+  type = "column",
+  hcaes(x = Year, y = Indicator, group = Group)
+  ) |>
+  hc_plotOptions(column = list(stacking = "normal")) |>
+  hc_yAxis(title = list(text = "Prosperity Gap"), #title_function2(input$indicator_barchart)), 
+           gridLineWidth =0) |>
+  hc_xAxis(categories = unique(dt$Year)) |>
+  hc_legend(reverse = TRUE) |> 
+  hc_credits(enabled = TRUE, text = paste0("Source: ", source_text, ". Accessed on ", today())) |>
+  hc_title(text = paste0("Decomposition of ", "Prosperity Gap" #title_function2("Prosperity G")
+                         , " by region")) |> 
+  hc_add_theme(my_own_theme) |> 
+  hc_xAxis(categories = list("Europe & Central Asia", "Latin America & Caribbean","Middle East & North Africa", "Other High Income Countries","South Asia", "Sub-Saharan Africa", "East Asia & Pacific" )) |>
+  hc_add_series(data = dt_global, type = "line", hcaes(x = Year, y = Indicator, group = Group), color = "black")
+
+
+})
+
+
+
+```
+
+
+
 
 
 
@@ -1391,7 +1778,7 @@ conditionalPanel(
     choices  = c(
       "Prosperity Gap", 
       "Mean", 
-      "Inequality"
+      "(PG) Inequality"
     ), 
     selected = "Prosperity Gap", 
     multiple = FALSE
@@ -1406,7 +1793,7 @@ conditionalPanel(
       "Prosperity Gap", 
       "Mean", 
       "Mean - Bottom 40",
-      "Inequality"
+      "(PG) Inequality"
     ), 
     selected = "Prosperity Gap", 
     multiple = FALSE
@@ -1523,7 +1910,7 @@ dt_use <- reactive({
       indicator_change,
       "Prosperity Gap"   = "PG",
       "Mean"             = "Mean",
-      "Inequality"       = "Inequality"
+      "(PG) Inequality"       = "Inequality"
     )
     }
   
@@ -1603,6 +1990,12 @@ dt_use <- reactive({
 
     
   } else if( input$plot_which_change == "Countries"){
+    # indicator ---------------------------------
+    if(input$indicator_country_change == "(PG) Inequality"){
+      indicator <- "Inequality"
+    } else{
+      indicator <- input$indicator_country_change
+    }
     
     
   # Filter countries ----
@@ -1637,7 +2030,7 @@ dt_use <- reactive({
     countries_selected  = countries_lookup$Country_name |> unique(),
     year1_selected      = as.numeric(input$initial_year_country_change),
     year2_selected      = c(as.numeric(input$initial_year_country_change) + as.numeric(input$interval_change)),
-    indicator           = input$indicator_country_change,
+    indicator           = indicator,
     window_length       = input$window_change
 )
 
@@ -1666,7 +2059,7 @@ renderPlotly({
       "Prosperity Gap"   = "PG",
       "Mean"             = "Mean",
       "Mean - Bottom 40" = "Mean_b40",
-      "Inequality"       = "Inequality"
+      "(PG) Inequality"       = "Inequality"
     )
     }
     
@@ -1679,7 +2072,7 @@ renderPlotly({
       indicator_change,
       "Prosperity Gap"   = "PG",
       "Mean"             = "Mean",
-      "Inequality"       = "Inequality"
+      "(PG) Inequality"       = "Inequality"
     )
     }
     
@@ -1870,7 +2263,7 @@ selectInput("ineq_indicatorX",
               "Prosperity Gap",
               "Mean", 
               "Mean - Bottom 40", 
-              "Inequality"
+              "(PG) Inequality"
             ),
             selected = "Mean")
 
@@ -1880,7 +2273,7 @@ selectInput("ineq_indicatorY",
               "Prosperity Gap",
               "Mean", 
               "Mean - Bottom 40", 
-              "Inequality"
+              "(PG) Inequality"
             ),
             selected = "Prosperity Gap")
  
@@ -1962,7 +2355,7 @@ conditionalPanel(
 observeEvent(input$select_initial_year_scatterplot, 
              {
                updated_choices <- dt_country[
-                 Year > as.numeric(input$select_initial_year_scatterplot), 
+                 Year >= as.numeric(input$select_initial_year_scatterplot), 
                  unique(Year)
                ]
                updated_choices <- sort(updated_choices)
@@ -2092,7 +2485,7 @@ dt_use_sp <- reactive({
       "Prosperity Gap"   = "PG",
       "Mean - Bottom 40" = "Mean_b40",
       "Mean"             = "Mean",
-      "Inequality"       = "Inequality"
+      "(PG) Inequality"       = "Inequality"
     )
   }
   ineq_indic_Y <- input$ineq_indicatorY
@@ -2103,7 +2496,7 @@ dt_use_sp <- reactive({
       "Prosperity Gap"   = "PG",
       "Mean - Bottom 40" = "Mean_b40",
       "Mean"             = "Mean",
-      "Inequality"       = "Inequality"
+      "(PG) Inequality"       = "Inequality"
     )
   }
 
@@ -2128,7 +2521,8 @@ dt_use_sp <- reactive({
         "Income Group: ", incgroup_current, "\n",
         input$ineq_indicatorX, ": ", round(IndicatorX,2),  "\n",
         input$ineq_indicatorY, ": ", round(IndicatorY, 2),  "\n",
-        "Survey type: ", str_to_title(Welfare_type)
+        "Survey type: ", str_to_title(Welfare_type), "\n", 
+        "Year: ", Year
       )
     )
   ]
@@ -2397,303 +2791,6 @@ output$DownloadButtonScatterplot <- downloadHandler(
 
 
 
-
-
-
-
-
-Decomposition of PG
-===========================================================
-
-
-Sidebar {.sidebar data-width=150}
------------------------------------------------------------------------
-
-
-```{r sidebar-barchart}
-
-# Select Indicator
-radioButtons("indicator_barchart", 
-            label = "Indicator:",
-            choices = c(
-              "Prosperity Gap",
-              # "Mean", 
-              # "Mean - Bottom 40", 
-              "Inequality"
-            ),
-            selected =  c(
-              "Prosperity Gap"
-            ))
-
-
-# radioButtons("region_or_countries", 
-#                    label = "Plot for regions or countries",  
-#                    choices = c(
-#                      "Regions", 
-#                      "Countries"
-#                    ), 
-#                    selected = c("Regions"))
-
-# conditionalPanel(
-#   condition = "input.region_or_countries == 'Countries'", 
-#   selectInput( "select_countries_barchart", 
-#                label    = "Select Countries", 
-#                choices  = c(
-#                  dt_country$Country_name |> 
-#                    unique() |> 
-#                    sort()
-#                ), 
-#                selected = c(
-#                  "Colombia", 
-#                  "Ghana", 
-#                  "Thailand", 
-#                  "Argentina"
-#                ), 
-#                multiple = TRUE
-#   )
-# )
-
-# conditionalPanel(
-#   condition = "input.region_or_countries == 'Regions'", 
-#   selectInput( "select_regions_barchart", 
-#                label    = "Select Regions", 
-#                choices  = c(
-#                  "All",
-#                  dt_region$Region_name |> 
-#                    unique() |> 
-#                    sort()
-#                ), 
-#                selected = c(
-#                  "All"
-#                ), 
-#                multiple = TRUE
-#   )
-# )
-  selectInput( "select_regions_barchart", 
-               label    = "Select Regions", 
-               choices  = c(
-                 "All",
-                 dt_region$Region_name |> 
-                   unique() |> 
-                   sort()
-               ), 
-               selected = c(
-                 "All"
-               ), 
-               multiple = TRUE
-  )
-
-radioButtons("all_years_barchart", 
-                   label = "Years selection",  
-                   choices = c(
-                     "All", 
-                     "Custom"
-                   ), 
-                   selected = c("All"))
-
-
-conditionalPanel(
-  condition = "input.all_years_barchart == 'Custom'",
-  selectInput("select_initial_year_barchart", 
-              label = "Initial Year:",
-              choices = dt_region$Year |> 
-                unique() |> 
-                sort(),
-              selected = dt_region$Year |> 
-                min(), 
-              multiple = FALSE)
-)
-
-conditionalPanel(
-  condition = "input.all_years_barchart == 'Custom' && input.all_years_barchart != null",
-  selectInput("select_final_year_barchart", 
-              label = "Final Year:",
-              choices = dt_region$Year |> 
-                unique() |> 
-                sort(),
-              selected = dt_region$Year |> 
-                max(), 
-              multiple = FALSE)
-)
-
-observeEvent(input$select_initial_year_table, 
-             {
-               updated_choices <- dt_region[
-                 Year > as.numeric(input$select_initial_year_table), 
-                 unique(Year)
-               ]
-               updated_choices <- sort(updated_choices)
-               updateSelectInput(
-                 session, 
-                 "select_final_year_barchart", 
-                 choices = updated_choices, 
-                 selected = dt_region$Year |> max() 
-               )
-})
-
-
-# Render download button
-#downloadButton("downloadData", "Download CSV")
-
-downloadButtonRmd(
-  outputId = "DownloadButtonBarchart", 
-  label = "CSV"
-)
-
-
-```
-
-Column {.tabset .tabset-fade}
------------------------------------------------------------------------
-
-
-```{r data-barchart}
-
-dt_barchart <- reactive({
-  
-  
-  # Region or countries ----
-  # if(input$region_or_countries == "Regions"){
-    dt_barchart <- copy(dt_region)
-    
-    # Filter
-    if(!"All" %chin% input$select_regions_barchart){
-      
-    dt_barchart <- dt_barchart[
-      Region_name %chin% input$select_regions_barchart
-    ]
-    
-    }
-    
-    setnames(
-      dt_barchart,
-      old = "Region_name",
-      new = "Group"
-    )  
-    
-
-  # Indicator name ----
-    if(input$indicator_barchart == "Prosperity Gap"){
-    
-    indicator   <- c("PG_decomp")
-    
-    } else {
-      indicator <- c("Inequality")
-    }
-  
-  # Round to 2 decimal places ----
-    col_round <- c("PG_decomp", "Inequality")
-    dt_barchart[
-      ,
-      (col_round) := lapply(
-        .SD,
-        function(x) round(x, 2)
-      ),
-      .SDcols = col_round
-    ]
-
-  # Set indicator ----
-  setnames(
-    dt_barchart, 
-    new = "Indicator", 
-    old = indicator
-  )
-  
-   # Filter years ----
-  if(input$all_years_barchart == "Custom"){
-    
-    dt_barchart <- dt_barchart[
-      Year >= as.numeric(input$select_initial_year_barchart) & Year <= as.numeric(input$select_final_year_barchart)
-    ]
-    
-  } else{
-    dt_barchart
-  }
-  
-  
-  
-})
-
-
-```
-
-
-```{r plot-barchart}
-
-# renderTable({
-#   dt_barchart()
-# })
-renderHighchart({
-
-  dt        <- dt_barchart()
-  dt_global <- dt[
-    Group == "Global"
-  ]
-  dt        <- dt[
-    !Group == "Global"
-  ] 
-# Make Theme -------------------------------------------------------------------
-my_own_theme <- hc_theme(
-  colors = RColorBrewer::brewer.pal(name = "Dark2", n = length(dt$Group |> unique())),
-  chart = list(
-    backgroundColor = "white"
-  ),
-  title = list(
-    style = list(
-      color = "black",
-      fontFamily = "Lato"
-    )
-  ),
-  # subtitle = list(
-  #   style = list(
-  #     color = "#666666",
-  #     fontFamily = "Shadows Into Light"
-  #   )
-  # ),
-  legend = list(
-    itemStyle = list(
-      fontFamily = "Lato",
-      color = "#666666"
-    ),
-    itemHoverStyle = list(
-      color = "gray"
-    )
-  )
-)
-
-
-  
-  # Create stacked bar chart
-hchart(
-  dt,
-  type = "column",
-  hcaes(x = Year, y = Indicator, group = Group)
-  ) |>
-  hc_plotOptions(column = list(stacking = "normal")) |>
-  hc_yAxis(title = list(text = title_function2(input$indicator_barchart)), gridLineWidth =0) |>
-  hc_xAxis(categories = unique(dt$Year)) |>
-  hc_legend(reverse = TRUE) |> 
-  hc_credits(enabled = TRUE, text = paste0("Source: ", source_text, ". Accessed on ", today())) |>
-  hc_title(text = paste0("Decomposition of ", title_function2(input$indicator_barchart), " by region")) |> 
-  hc_add_theme(my_own_theme) |> 
-  hc_add_series(data = dt_global, type = "line", hcaes(x = Year, y = Indicator, group = Group), color = "black") 
-  
-
-
-})
-
-
-
-```
-
-
-
-
-
-
-
-
-
 Table of Indicators
 ===========================================================
 
@@ -2710,7 +2807,7 @@ checkboxGroupInput("ineq_indicator_table",
               "Prosperity Gap",
               "Mean", 
               "Mean - Bottom 40", 
-              "Inequality"
+              "(PG) Inequality"
             ),
             selected =  c(
               "Prosperity Gap"
@@ -2770,7 +2867,7 @@ conditionalPanel(
 observeEvent(input$select_initial_year_table, 
              {
                updated_choices <- dt_country[
-                 Year > as.numeric(input$select_initial_year_table), 
+                 Year >= as.numeric(input$select_initial_year_table), 
                  unique(Year)
                ]
                updated_choices <- sort(updated_choices)
@@ -2819,38 +2916,6 @@ make_table_across_countries <- function(
   stopifnot(country_name_vec %chin% countries_lookup$Country_name)
   years_selected <- match.arg(years_selected)
 
-  # # If decile shares is selected
-  # if(c("Decile Shares") %chin% ineq_indicators ){
-  #   # remove "Decile Shares" element
-  #   ineq_indicators <- ineq_indicators[!c("Decile Shares") == ineq_indicators]
-  #   # add all individual decile shares
-  #   ineq_indicators <- c(
-  #     ineq_indicators,
-  #     paste0("decile", 1:10)
-  #   )
-  # }
-  # 
-  # # IF the ratios selected
-  # if(c("Top 10 Bottom 40 Ratio") %chin% ineq_indicators){
-  #   # remove ratios elements
-  #   ineq_indicators <- ineq_indicators[!c("Top 10 Bottom 40 Ratio") ==ineq_indicators]
-  #   # add all individual decile shares
-  #   ineq_indicators <- c(
-  #     ineq_indicators,
-  #     "t10_b40"
-  #   )
-  # }
-  #   # IF the ratios selected
-  # if(c("Top 20 Bottom 20 Ratio") %chin% ineq_indicators){
-  #   # remove ratios elements
-  #   ineq_indicators <- ineq_indicators[!c("Top 20 Bottom 20 Ratio") == ineq_indicators]
-  #   # add all individual decile shares
-  #   ineq_indicators <- c(
-  #     ineq_indicators,
-  #     "t20_b20"
-  #   )
-  # }
-
   indicators_names <- ineq_indicators
     # Convert this character vector into a data.table
 dt_indicators <- data.table(ineq_indicators = ineq_indicators)
@@ -2858,10 +2923,10 @@ ineq_indicators <- "Prosperity Gap"
 #  change each name
 dt_indicators[, ineq_indicators := switch(
   ineq_indicators,
-  "Prosperity Gap"   = "PG",
-  "Mean - Bottom 40" = "Mean_b40",
-  "Mean"             = "Mean",
-  "Inequality"       = "Inequality"
+  "Prosperity Gap"        = "PG",
+  "Mean - Bottom 40"      = "Mean_b40",
+  "Mean"                  = "Mean",
+  "(PG) Inequality"       = "Inequality"
 ), by = ineq_indicators]
 ineq_indicators <- dt_indicators$ineq_indicators
 # dt_indicators$ineq_indicators
@@ -2951,7 +3016,7 @@ table <-
         unique()
     }
 
-    make_table_across_countries(
+    table <- make_table_across_countries(
       dt               = dt_pip,
       country_name_vec = ct,
       ineq_indicators  = input$ineq_indicator_table,
@@ -2959,14 +3024,36 @@ table <-
       start_year       = input$select_initial_year_table,
       end_year         = input$select_final_year_table
   )
+    if("(PG) Inequality" %chin% input$ineq_indicator_table){
+      setnames(
+        table, 
+        old = "Inequality", 
+        new = "(PG) Inequality"
+      )
+    }
+    table
 })
 
 
 
 renderPlotly({
 
+  nm <- names(table())
+  # dt_nm <- data.table(original = nm)
+  # dt_nm[, nm := original]
+  # dt_nm[original == "Inequality", nm := "(PG) Inequality"]
+  # nm <- dt_nm$nm
+ # nm <- gsub("\\(PG\\) ", "", nm)
+
+  cn <- table() |> colnames()
+  # dt_cn <- data.table(original = cn)
+  # dt_cn[, cn := original]
+  # dt_cn[original == "Inequality", cn := "(PG) Inequality"]
+  # cn <- dt_cn$cn
+ # cn <- gsub("\\(PG\\) ", "", cn)
+
 list_of_columns <- lapply(
-    names(table()),
+    nm,
     \(col_name) { # Make the columns list items for plotly
       return(table()[[col_name]])
     })
@@ -2976,8 +3063,7 @@ list_of_columns <- lapply(
     type = 'table',
     #columnwidth = c(100, 100),
     header = list(
-      values = table() |>
-        colnames() |>
+      values = cn |>
         # column names vector
         str_replace_all(pattern = "_",
                         replacement = " "),
