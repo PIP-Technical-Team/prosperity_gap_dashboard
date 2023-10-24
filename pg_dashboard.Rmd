@@ -307,7 +307,8 @@ dt_country[
   , 
   report := NULL
 ]
-# Logs for growth rates
+# Growth -----------------------------------------------------------------------
+## Logs for growth rates
 dt_region[, `:=`(
   PG_log         = log(PG),              
   PG_decomp_log  = log(PG_decomp),
@@ -320,7 +321,13 @@ dt_country[, `:=`(
   Mean_log       = log(Mean), 
   Mean_b40_log   = log(Mean_b40)
 )]
-# Growth rates
+dt_lineup[, `:=`(
+  PG_log         = log(PG),              
+  Inequality_log = log(Inequality), 
+  Mean_log       = log(Mean), 
+  Mean_b40_log   = log(Mean_b40)
+)]
+## Growth rates
 dt_region[
   , `:=` (
     PG_growth          = PG_log - shift(PG_log, type = 'lag', n = 1), 
@@ -338,6 +345,22 @@ dt_country[
   by          = Country_name
 ]
 dt_country[
+  , `:=` (
+    PG_growth          = (PG_log         - shift(PG_log, type = 'lag', n = 1))/time_diff, 
+    Inequality_growth  = (Inequality_log - shift(Inequality_log, type = "lag", n = 1))/time_diff, 
+    Mean_growth        = (Mean_log       - shift(Mean_log, type = "lag", n = 1))/time_diff, 
+    Mean_b40_growth    = (Mean_b40_log   - shift(Mean_b40_log, type = "lag", n = 1))/time_diff
+  )
+  , by                 = Country_name
+]
+dt_lineup[
+  , 
+  `:=` (
+    time_diff = Year - shift(Year, type = "lag", n = 1)
+  ), 
+  by          = Country_name
+]
+dt_lineup[
   , `:=` (
     PG_growth          = (PG_log         - shift(PG_log, type = 'lag', n = 1))/time_diff, 
     Inequality_growth  = (Inequality_log - shift(Inequality_log, type = "lag", n = 1))/time_diff, 
@@ -773,11 +796,11 @@ conditionalPanel(
     ), 
     selected = c(
               "Sub-Saharan Africa", 
-              "Europe & Central Asia" , 
-              "Latin America & Caribbean", 
+              #"Europe & Central Asia" , 
+              #"Latin America & Caribbean", 
               "South Asia", 
-              "East Asia & Pacific", 
-              "Middle East & North Africa" 
+              "East Asia & Pacific"#, 
+              #"Middle East & North Africa" 
             ), 
     multiple = TRUE
   )
@@ -1020,9 +1043,14 @@ dt_trend_plot1 <- reactive({
     if(!indicator_trend1 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
     indicator_trend1 <- switch(
       indicator_trend1,
-      "Prosperity Gap"   = "PG",
-      "Mean"             = "Mean",
-      "(PG) Inequality"       = "Inequality"
+      "Prosperity Gap"           = "PG",
+      "Mean - Bottom 40"         = "Mean_b40",
+      "Mean"                     = "Mean",
+      "(PG) Inequality"          = "Inequality", 
+      "Growth - Prosperity Gap"  = "PG_growth", 
+      "Growth - Mean"            = "Mean_growth" , 
+      "Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
+      "Growth - (PG) Inequality" = "Inequality_growth"
     )
     }
     
@@ -1066,10 +1094,14 @@ dt_trend_plot1 <- reactive({
     if(!indicator_trend1 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
     indicator_trend1 <- switch(
       indicator_trend1,
-      "Prosperity Gap"   = "PG",
-      "Mean - Bottom 40" = "Mean_b40",
-      "Mean"             = "Mean",
-      "(PG) Inequality"       = "Inequality"
+      "Prosperity Gap"           = "PG",
+      "Mean - Bottom 40"         = "Mean_b40",
+      "Mean"                     = "Mean",
+      "(PG) Inequality"          = "Inequality", 
+      "Growth - Prosperity Gap"  = "PG_growth", 
+      "Growth - Mean"            = "Mean_growth" , 
+      "Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
+      "Growth - (PG) Inequality" = "Inequality_growth"
     )
     }
     
@@ -1104,36 +1136,38 @@ dt_trend_plot1 <- reactive({
     
   }
   
-  
-  # If 'Both' --------------------------------------------
+   # If 'Both' --------------------------------------------
   if(input$plot_which_trend == "Both"){
         
     indicator_trend1 <- input$indicator_trend1_both
     if(!indicator_trend1 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
     indicator_trend1 <- switch(
       indicator_trend1,
-      "Prosperity Gap"   = "PG",
-      "Mean"             = "Mean",
-      "(PG) Inequality"       = "Inequality"
+      "Prosperity Gap"           = "PG",
+      "Mean - Bottom 40"         = "Mean_b40",
+      "Mean"                     = "Mean",
+      "(PG) Inequality"          = "Inequality", 
+      "Growth - Prosperity Gap"  = "PG_growth", 
+      "Growth - Mean"            = "Mean_growth" , 
+      "Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
+      "Growth - (PG) Inequality" = "Inequality_growth"
     )
     }
-    
     if(input$lineup_or_survey_trend == "Survey"){
     dt_trend_c1 <- copy(dt_country)
     } else {
       dt_trend_c1 <- copy(dt_lineup)
     }
-    
-    dt_trend_c1 <- copy(dt_country)
+
     dt_trend_c1 <- dt_trend_c1[
       , 
-      .(Economy=Country_name, Year, PG, Inequality, Mean, Region_code, Survey_comparability)
+      .(Economy=Country_name, Year, PG, Inequality, Mean, Region_code, Survey_comparability, PG_growth, Mean_growth, Inequality_growth)
     ]
     dt_trend_r1 <- copy(dt_region)
     dt_trend_r1 <- dt_trend_r1[!Region_name == "Global"]
     dt_trend_r1 <- dt_trend_r1[
       , 
-      .(Economy=Region_name, Year, PG, Inequality, Mean, Region_code, Survey_comparability = 1L)
+      .(Economy=Region_name, Year, PG, Inequality, Mean, Region_code, Survey_comparability = 1L, PG_growth, Mean_growth, Inequality_growth)
     ]
     
     dt_trend_plot1 <- rbindlist(
@@ -1149,13 +1183,18 @@ dt_trend_plot1 <- reactive({
       new = c("IndicatorTrend1")
     )
   
+    if(grepl(pattern = "Growth", x = input$indicator_trend1_both) == TRUE){
+      roundto <- 3
+    } else{
+      roundto <- 2
+    }
     dt_trend_plot1[
       ,
       text_tooltip := (
         paste0(
           "Economy: "                     , Economy, "\n",
           "Year: "                        , Year,
-          "\n"                            , input$indicator_trend1_both, ": ", round(IndicatorTrend1, 2)
+          "\n"                            , input$indicator_trend1_both, ": ", round(IndicatorTrend1, roundto)
         )
       )
     ]
@@ -1195,10 +1234,12 @@ dt_trend_plot2 <- reactive({
     indicator_trend2 <- switch(
       indicator_trend2,
       "Prosperity Gap"           = "PG",
+      "Mean - Bottom 40"         = "Mean_b40",
       "Mean"                     = "Mean",
       "(PG) Inequality"          = "Inequality", 
       "Growth - Prosperity Gap"  = "PG_growth", 
       "Growth - Mean"            = "Mean_growth" , 
+      "Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
       "Growth - (PG) Inequality" = "Inequality_growth"
     )
     }
@@ -1309,6 +1350,7 @@ dt_trend_plot2 <- reactive({
       "(PG) Inequality"          = "Inequality", 
       "Growth - Prosperity Gap"  = "PG_growth", 
       "Growth - Mean"            = "Mean_growth" , 
+      "Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
       "Growth - (PG) Inequality" = "Inequality_growth"
     )
     }
@@ -1317,7 +1359,7 @@ dt_trend_plot2 <- reactive({
     } else {
       dt_trend_c2 <- copy(dt_lineup)
     }
-    dt_trend_c2 <- copy(dt_country)
+    
     dt_trend_c2 <- dt_trend_c2[
       , 
       .(Economy=Country_name, Year, PG, Inequality, Mean, Region_code, Survey_comparability, PG_growth, Mean_growth, Inequality_growth)
@@ -1384,11 +1426,11 @@ dt_trend_plot2 <- reactive({
 
 
 
+
 Column {.tabset .tabset-fade}
 -----------------------------------------------------------------------
 
-### 
-
+### Show only Figure 1
 
 
 ```{r}
@@ -1425,12 +1467,33 @@ tp1 <- ggplot(dt_trend_plot1) +
   theme(legend.position = "none")
 
 # Add geom_point and geom_line
+if(input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regional aggregates"){
+  tp1 <- tp1 +
+  geom_line(
+    aes(
+      x      = round(Year),
+      y      = transformation(IndicatorTrend1),
+      color  = Economy,
+      group  = Survey_comparability
+    ), 
+    alpha    = 0.8
+  )
+} else {
+  
+  tp1 <- tp1 +
+  geom_line(
+    aes(
+      x      = round(Year),
+      y      = transformation(IndicatorTrend1),
+      color  = Economy,
+      group  = Survey_comparability
+    ), 
+    alpha    = 0.8, 
+    linetype = "dotted"
+  )
+}
+
 tp1 <- tp1 +
-  geom_line(aes(x = round(Year),
-                y = transformation(IndicatorTrend1),
-                color = Economy
-                , group = Survey_comparability
-                ), alpha = 0.8)  +
   geom_point(aes(x = round(Year), y = transformation(IndicatorTrend1), color = Economy, text = text_tooltip), size = 1.5, alpha = 0.9) +
   scale_x_continuous(expand = expand_scale(mult = c(0.2, 0.2)))+
   scale_color_brewer(palette = "Dark2")
@@ -1465,17 +1528,6 @@ tp1 <- ggplotly(tp1, tooltip = "text")
 
 tp1 <- tp1 |>
 layout(
-  # images = list(
-  #   list(
-  #     source = base64enc::dataURI(file = "Logo/logo_horizontal.png"),
-  #         xref = "paper",
-  #        yref = "paper",
-  #        x= 0.8,
-  #        y= -0.075,
-  #        sizex = 0.15,
-  #        sizey = 0.15,
-  #        opacity = 0.8
-  #   )),
     annotations =
               list(
                 x = 0,
@@ -1516,31 +1568,114 @@ tp1
 
 
 
-
-
-
-
-
-
-Column {.tabset .tabset}
------------------------------------------------------------------------
-
-
-
-### 
+### Show both Figures 1 and 2
 
 
 
 ```{r}
 renderPlotly({
 
+# Figure 1 ---------------------------------------------------------------------------
   # give name
   if(input$plot_which_trend == "Regional aggregates"){
-    ind_name <- input$indicator_trend2_regionalaggregates
+    ind_name1 <- input$indicator_trend1_regionalaggregates
   } else if(input$plot_which_trend == "Selected economies"){
-    ind_name <- input$indicator_trend2_economies
+    ind_name1 <- input$indicator_trend1_economies
   } else {
-    ind_name <- input$indicator_trend2_both
+    ind_name1 <- input$indicator_trend1_both
+  }
+  
+
+dt_trend_plot1 <- dt_trend_plot1()
+# Create a subset with only the first points for each country
+dt_trend_plot1[, rel_nudge_y := 0.1 * (max(IndicatorTrend1) - min(IndicatorTrend1)), by = Economy]
+first_points = dt_trend_plot1[, .SD[which.min(Year)], by = Economy]
+first_points = first_points[dt_trend_plot1, on = .(Economy), nomatch = 0]
+#
+
+# Log transformations
+# Conditional logic for log transformation
+if(input$log_y_3_fig1 == TRUE){
+  transformation <- function(x) log(x)
+} else {
+  transformation <- function(x) x
+}
+
+# Initialize ggplot object
+tp1 <- ggplot(dt_trend_plot1) +
+  theme_classic() +
+  theme(legend.position = "none")
+
+# Add geom_point and geom_line
+# Add geom_point and geom_line
+if(input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regional aggregates"){
+  tp1 <- tp1 +
+  geom_line(
+    aes(
+      x      = round(Year),
+      y      = transformation(IndicatorTrend1),
+      color  = Economy,
+      group  = Survey_comparability
+    ), 
+    alpha    = 0.8
+  )
+} else {
+  
+  tp1 <- tp1 +
+  geom_line(
+    aes(
+      x      = round(Year),
+      y      = transformation(IndicatorTrend1),
+      color  = Economy,
+      group  = Survey_comparability
+    ), 
+    alpha    = 0.8, 
+    linetype = "dotted"
+  )
+}
+tp1 <- tp1 +
+  geom_point(aes(x = round(Year), y = transformation(IndicatorTrend1), color = Economy, text = text_tooltip), size = 1.5, alpha = 0.9) +
+  scale_x_continuous(expand = expand_scale(mult = c(0.2, 0.2)))+
+  scale_color_brewer(palette = "Dark2")
+
+# Add geom_point and geom_line
+
+# Add geom_text for labeling the first point for each country
+#tp1 <- # Add geom_text for labeling the first point for each country
+tp1 <- tp1 +
+  geom_text(data = first_points,
+            aes(x = Year, y = transformation(IndicatorTrend1 - rel_nudge_y), label = Economy, color = Economy),
+            size = 2.5)
+
+if(input$log_y_3_fig1 == TRUE){
+  tp1 <- tp1 +
+  scale_y_log10(labels = function(x) round(exp(x), 0))
+}
+
+if(grepl(pattern = "Growth", x = ind_name1) == TRUE){
+  
+  tp1 <- tp1 + 
+    geom_hline(
+      yintercept = 0, 
+      linetype   = "dashed", 
+      color      = "darkgrey"
+    )
+  
+}
+tp1 <- ggplotly(tp1, tooltip = "text")
+
+
+
+
+# Figure 2 --------------------------------------------------------------------
+
+  # give name
+  if(input$plot_which_trend == "Regional aggregates"){
+    ind_name2 <- input$indicator_trend2_regionalaggregates
+  } else if(input$plot_which_trend == "Selected economies"){
+    ind_name2 <- input$indicator_trend2_economies
+  } else {
+    ind_name2 <- input$indicator_trend2_both
   }
   
 dt_trend_plot2 <- dt_trend_plot2()
@@ -1564,14 +1699,47 @@ tp2 <- ggplot(dt_trend_plot2) +
   theme(legend.position = "none")
 
 # Add geom_point and geom_line
+if(input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regional aggregates"){
+  tp2 <- tp2 +
+  geom_line(
+    aes(
+      x      = round(Year),
+      y      = transformation(IndicatorTrend2),
+      color  = Economy,
+      group  = Survey_comparability
+    ), 
+    alpha    = 0.8
+  )
+} else {
+  
+  tp2 <- tp2 +
+  geom_line(
+    aes(
+      x      = round(Year),
+      y      = transformation(IndicatorTrend2),
+      color  = Economy,
+      group  = Survey_comparability
+    ), 
+    alpha    = 0.8, 
+    linetype = "dotted"
+  )
+}
 tp2 <- tp2 +
-  geom_line(aes(x = round(Year),
-                y = transformation(IndicatorTrend2),
-                color = Economy
-                , group = Survey_comparability
-                ), alpha = 0.8)  +
-  geom_point(aes(x = round(Year), y = transformation(IndicatorTrend2), color = Economy, text = text_tooltip), size = 1.5, alpha = 0.9) +
-  scale_x_continuous(expand = expand_scale(mult = c(0.2, 0.2)))+
+  geom_point(
+    aes(
+      x = round(Year), 
+      y = transformation(IndicatorTrend2), 
+      color = Economy,
+      text = text_tooltip
+    ), 
+    size = 1.5, 
+    alpha = 0.9
+  ) +
+  scale_x_continuous(
+    expand = expand_scale(
+      mult = c(0.2, 0.2)
+    )
+  )+
   scale_color_brewer(palette = "Dark2")
 
 # Add geom_point and geom_line
@@ -1587,7 +1755,7 @@ if(input$log_y_3_fig2 == TRUE){
   scale_y_log10(labels = function(x) round(exp(x), 0))
 }
 
-if(grepl(pattern = "Growth", x = ind_name) == TRUE){
+if(grepl(pattern = "Growth", x = ind_name2) == TRUE){
   
   tp2 <- tp2 + 
     geom_hline(
@@ -1600,21 +1768,37 @@ if(grepl(pattern = "Growth", x = ind_name) == TRUE){
 
 tp2 <- ggplotly(tp2, tooltip = "text")
 
+# Add Titles -------------------------------------------------------------------
 
+tp1 <- tp1 |> layout(xaxis = list(title = ''), yaxis = list(title = paste(title_function2(ind_name1)), titlefont = list(size  = 12)))
+tp2 <- tp2 |> layout(xaxis = list(title = ''), yaxis = list(title = paste(title_function2(ind_name2)), titlefont = list(size  = 12)))
 
-tp2 <- tp2 |>
+annotate_tp12 <- list(
+  list(
+    x = 0.25, 
+    y = 1, 
+    text = paste("Figure 1:", title_function2(ind_name1), "over time"), 
+    xref = "paper", 
+    yref = "paper", 
+    xanchor = "center", 
+    yanchor = "bottom", 
+    showarrow = FALSE
+  ), 
+  list(
+    x = 0.75, 
+    y = 1, 
+    text = paste("Figure 2:", title_function2(ind_name2), "over time"), 
+    xref = "paper", 
+    yref = "paper", 
+    xanchor = "center", 
+    yanchor = "bottom", 
+    showarrow = FALSE
+  )
+)
+
+tp1_and_2 <- subplot(tp1, tp2, titleY= TRUE)
+tp1_and_2 <- tp1_and_2 |>
 layout(
-  # images = list(
-  #   list(
-  #     source = base64enc::dataURI(file = "Logo/logo_horizontal.png"),
-  #         xref = "paper",
-  #        yref = "paper",
-  #        x= 0.8,
-  #        y= -0.075,
-  #        sizex = 0.15,
-  #        sizey = 0.15,
-  #        opacity = 0.8
-  #   )),
     annotations =
               list(
                 x = 0,
@@ -1625,28 +1809,11 @@ layout(
                 yref='paper',
                 font=list(size=6, color="grey")
                 ))
-
-tp2 <- layout(tp2,
-            title = list(
-              text = paste("Figure 2:", title_function2(ind_name), "over time"),
-              titlefont = list(
-                size = 14
-              )
-              ),
-            titlefont = list(
-              color = 'black',
-              size  = 14
-            ),
-            xaxis = list(
-              title = ""
-            ),
-            yaxis = list(
-              title = title_function2(ind_name),
-              titlefont = list(size  = 12)
-            )
-)
-
-tp2
+tp1_and_2 <- tp1_and_2 |> 
+  layout(
+    annotations = annotate_tp12
+  )
+tp1_and_2
 
 
 
@@ -1661,69 +1828,11 @@ Decomposition of PG
 ===========================================================
 
 
-Sidebar {.sidebar data-width=150}
+Sidebar {.sidebar data-width=200}
 -----------------------------------------------------------------------
 
 
 ```{r sidebar-barchart}
-
-# Select Indicator
-# radioButtons("indicator_barchart", 
-#             label = "Indicator:",
-#             choices = c(
-#               "Prosperity Gap"#,
-#               # "Mean", 
-#               # "Mean - Bottom 40", 
-#               #"Inequality"
-#             ),
-#             selected =  c(
-#               "Prosperity Gap"
-#             ))
-
-
-# radioButtons("region_or_countries", 
-#                    label = "Plot for regions or countries",  
-#                    choices = c(
-#                      "Regions", 
-#                      "Countries"
-#                    ), 
-#                    selected = c("Regions"))
-
-# conditionalPanel(
-#   condition = "input.region_or_countries == 'Countries'", 
-#   selectInput( "select_countries_barchart", 
-#                label    = "Select Countries", 
-#                choices  = c(
-#                  dt_country$Country_name |> 
-#                    unique() |> 
-#                    sort()
-#                ), 
-#                selected = c(
-#                  "Colombia", 
-#                  "Ghana", 
-#                  "Thailand", 
-#                  "Argentina"
-#                ), 
-#                multiple = TRUE
-#   )
-# )
-
-# conditionalPanel(
-#   condition = "input.region_or_countries == 'Regions'", 
-#   selectInput( "select_regions_barchart", 
-#                label    = "Select Regions", 
-#                choices  = c(
-#                  "All",
-#                  dt_region$Region_name |> 
-#                    unique() |> 
-#                    sort()
-#                ), 
-#                selected = c(
-#                  "All"
-#                ), 
-#                multiple = TRUE
-#   )
-# )
 
 selectInput(
   "level_or_growth_decomposition", 
@@ -1758,12 +1867,18 @@ conditionalPanel(
   selectInput( "select_regions_barchart_growth", 
                label    = "Decompose selected region's PG growth:", 
                choices  = c(
-                 dt_region$Region_name |> 
-                   unique() |> 
-                   sort(), "WLD"
+                 (dt_region$Region_name |> 
+                    unique() |> 
+                    sort())[
+                      !(
+                        dt_region$Region_name |> 
+                          unique() |> 
+                          sort()
+                      ) == "Global"
+                    ] 
                ), 
                selected = c(
-                 "SSA"
+                 "Sub-Saharan Africa"
                ), 
                multiple = FALSE
   )
@@ -1843,7 +1958,6 @@ dt_barchart <- reactive({
   indicator <- c("PG_decomp")
   
   # Region or countries ----
-  # if(input$region_or_countries == "Regions"){
     dt_barchart <- copy(dt_region)
     
     # Filter
@@ -1860,16 +1974,6 @@ dt_barchart <- reactive({
       old = "Region_name",
       new = "Group"
     )  
-    
-
-  # # Indicator name ----
-  #   if(input$indicator_barchart == "Prosperity Gap"){
-  #   
-  #   indicator   <- c("PG_decomp")
-  #   
-  #   } else {
-  #     indicator <- c("Inequality")
-  #   }
   
   # Round to 2 decimal places ----
     col_round <- c("PG_decomp", "Inequality")
@@ -1990,6 +2094,9 @@ renderHighchart({
   dt_pg <- dt[
     Group == "Prosperity Gap growth rate"
   ]
+  dt <- dt[
+      !Group == "Prosperity Gap growth rate"
+    ]
 
   } else{
     dt_pg <- dt[
@@ -1997,11 +2104,6 @@ renderHighchart({
     ]
   }
   
-  if(input$level_or_growth_decomposition == "Growth"){
-    dt <- dt[
-      !Group == "Prosperity Gap"
-    ]
-  }
 
 # Make Theme -------------------------------------------------------------------
 my_own_theme <- hc_theme(
@@ -2070,7 +2172,7 @@ if(input$level_or_growth_decomposition == "Level"){
   hc_xAxis(categories = unique(dt$Year)) |>
   hc_legend(reverse = TRUE) |> 
   hc_credits(enabled = TRUE, text = paste0("Source: ", source_text, ". Accessed on ", today())) |>
-  hc_title(text = paste0("Decomposition of ", "growth in prosperty gap" 
+  hc_title(text = paste0("Decomposition of ", "growth in Prosperty Gap" 
                          , " for selected region")) |> 
   hc_add_theme(my_own_theme) |> 
   hc_xAxis(categories = list("Inequality growth", "Mean growth", "PG growth")) |>
@@ -2233,6 +2335,7 @@ downloadButtonRmd(
 )
 
 ```
+
 
 Column {.tabset .tabset}
 -----------------------------------------------------------------------
@@ -2660,7 +2763,8 @@ radioButtons("color_by",
                    label = "Color points by:",  
                    choices = c(
                      "Region", 
-                     "Income group"
+                     "Income group", 
+                     "Same Color"
                    ), 
                    selected = c("Region"))
 
@@ -2880,6 +2984,8 @@ if (input$color_by == "Region") {
   dt[, col_vec := ifelse(all_cntr %chin% selected_countries(), reg, "Unselected")]
 } else if (input$color_by == "Income group") {
   dt[, col_vec := ifelse(all_cntr %chin% selected_countries(), inc, "Unselected")]
+} else if (input$color_by == "Same Color"){
+  dt[, col_vec := rep("Same", length(reg))]
 }
 # Extract the 'bla' column to a vector
 col_vec <- dt$col_vec
@@ -2965,7 +3071,7 @@ modified_palette <- modify_palette("Dark2", "Unselected", "lightgrey")
 sp1 <- sp1 +
   scale_color_manual(values = modified_palette, drop = TRUE)
 
-  # scale_color_brewer(palette = "Dark2")
+# scale_color_brewer(palette = "Dark2")
 
 # # Add geom_point
 # Dynamically generate alpha values
@@ -2973,15 +3079,30 @@ unique_colors <- unique(dt$Color)
 alpha_values <- setNames(rep(0.9, length(unique_colors)), unique_colors)
 alpha_values["Unselected"] <- 0.1
 
-  sp1 <- sp1 +
+if (!input$color_by == "Same Color"){
+sp1 <- sp1 +
   geom_point(aes(
     x = transformation_x(IndicatorX),
     y = transformation_y(IndicatorY),
     color = Color,
     text = text_tooltip,
     alpha = alpha_val
-  )#, alpha = 0.55
   )
+  )
+} else {
+  sp1 <- sp1 +
+   geom_point(aes(
+     x = transformation_x(IndicatorX),
+     y = transformation_y(IndicatorY),
+     #color = Color,
+     text = text_tooltip,
+     alpha = alpha_val
+   ), 
+   color = RColorBrewer::brewer.pal(n=3, name = "Dark2")[[1]]
+   )
+}
+
+
   # scale_alpha_discrete(range = c(rep(0.8, length(dt$Color |> unique()) -1, 0.1)))+
   # if("Unselected" %chin% dt$Color){
   #   sp1 <- sp1 + 
@@ -3375,6 +3496,14 @@ table <-
         new = "(PG) Inequality"
       )
     }
+    if("PG" %chin% input$ineq_indicator_table){
+      setnames(
+        table, 
+        old = "PG", 
+        new = "Prosperity Gap"
+      )
+    }
+    table[, Spell := NULL]
     table
 })
 
@@ -3390,11 +3519,7 @@ renderPlotly({
  # nm <- gsub("\\(PG\\) ", "", nm)
 
   cn <- table() |> colnames()
-  # dt_cn <- data.table(original = cn)
-  # dt_cn[, cn := original]
-  # dt_cn[original == "Inequality", cn := "(PG) Inequality"]
-  # cn <- dt_cn$cn
- # cn <- gsub("\\(PG\\) ", "", cn)
+  cn[cn == "PG"] <- "Prosperity Gap"
 
 list_of_columns <- lapply(
     nm,
@@ -3432,17 +3557,6 @@ t <- layout(
 
  t <- t |>
    layout(
-     # images = list(
-     #   list(
-     #     source = base64enc::dataURI(file = "Logo/logo_horizontal.png"),
-     #         xref = "paper",
-     #        yref = "paper",
-     #        x= 0.8,
-     #        y= -0.02,
-     #        sizex = 0.15,
-     #        sizey = 0.15,
-     #        opacity = 0.8
-     #   )),
        annotations =
                  list(
                    x = 0,
