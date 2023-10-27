@@ -21,6 +21,27 @@ resource_files:
 - data/dt_region.rds
 - data/headcounts_lineup.rds
 - data/headcounts_survey.rds
+- data/countries_lookup.rds
+- data/dt_country.rds
+- data/dt_imputed.rds
+- data/dt_lineup.rds
+- data/dt_region.rds
+- data/headcounts_lineup.rds
+- data/headcounts_survey.rds
+- data/countries_lookup.rds
+- data/dt_country.rds
+- data/dt_imputed.rds
+- data/dt_lineup.rds
+- data/dt_region.rds
+- data/headcounts_lineup.rds
+- data/headcounts_survey.rds
+- data/countries_lookup.rds
+- data/dt_country.rds
+- data/dt_imputed.rds
+- data/dt_lineup.rds
+- data/dt_region.rds
+- data/headcounts_lineup.rds
+- data/headcounts_survey.rds
 ---
 
 ```{r}
@@ -180,9 +201,86 @@ title_function2 <- function(ind){
   
 }
 
+title_function_y_2 <- function(ind){
+  
+  title_lookup <- c(
+    "Prosperity Gap",
+    "Mean", 
+    "Mean - Bottom 40", 
+    "(PG) Inequality", 
+    "Growth - Prosperity Gap", 
+    "Growth - Mean", 
+    "Growth - Mean Bottom 40",
+    "Growth - (PG) Inequality", 
+    "Poverty headcount - $2.15",
+    "Poverty headcount - $3.65",
+    "Poverty headcount - $6.85"
+  )
+  
+  title_use_vec <- c(
+    "Prosperity Gap \n (Declines correspond to an improvement)",
+    "Mean (daily p.c., 2017 $PPP)", 
+    "Mean of bottom 40 (daily p.c.)", 
+    "(PG) Inequality", 
+    "Growth in Prosperity Gap", 
+    "Growth in Mean (daily pc, 2017 $PPP)", 
+    "Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
+    "Growth in (PG) Inequality", 
+    "Poverty headcount - $2.15 (daily p.c.)",
+    "Poverty headcount - $3.65 (daily p.c.)", 
+    "Poverty headcount - $6.85 (daily p.c.)"
+  )
+  
+  use_title <- title_use_vec[
+    which(
+      title_lookup %chin% ind
+    )
+  ]
+  
+  return(use_title)
+  
+}
 
 
 
+title_function_y <- function(ind){
+  
+  title_lookup <- c("Mean", 
+                    "Mean_b40", 
+                    "PG", 
+                    "Inequality", 
+                    "PG_growth", 
+                    "Inequality_growth", 
+                    "Mean_growth", 
+                    "Mean_b40_growth", 
+                    "Headcount215",
+                    "Headcount365",
+                    "Headcount685"
+  )
+  
+  title_use_vec <- c(
+    "Mean (daily per capita, 2017 $PPP)", 
+    "Mean of bottom 40 (daily pc, 2017 $PPP)",
+    "Prosperity Gap \n (Declines correspond to an improvement)", 
+    "(PG) Inequality", 
+    "Growth in Prosperity Gap", 
+    "Growth in Mean (daily p.c., 2017 $PPP)", 
+    "Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
+    "Growth in (PG) Inequality", 
+    "Poverty headcount - $2.15 daily p.c.",
+    "Poverty headcount - $3.65 daily p.c.", 
+    "Poverty headcount - $6.85 daily p.c."
+  )
+  
+  use_title <- title_use_vec[
+    which(
+      title_lookup %chin% ind
+    )
+  ]
+  
+  return(use_title)
+  
+}
               
 
 # Add Download button
@@ -323,30 +421,43 @@ Sidebar {.sidebar data-width=250}
 # Plot by ----------------------------------------------------------------------
 
 ## Plot single region aggregate or 
-radioButtons("plot_which_trend", 
+selectInput("plot_which_trend", 
                    label = "Plot:",  
                    choices = c(
                      "Regional aggregates", 
                      "Selected economies", 
                      "Both"
                    ), 
-                   selected = c("Regional aggregates"))
+                   selected = c("Regional aggregates"), 
+                   multiple = FALSE
+)
 
 
 
 # Lineup or Surveys ------------------------------------------------------------
 
 conditionalPanel(
-  condition = "input.plot_which_trend == 'Selected economies' | input.plot_which_trend == 'Both' ", 
-  selectInput(
+  condition = "input.plot_which_trend == 'Selected economies'", 
+  radioButtons(
     "lineup_or_survey_trend", 
-    label    = "Plot interpolated or survey data", 
+    label    = "Plot interpolated or survey data:", 
     choices  = c(
       "Interpolated", 
       "Survey"
     ), 
-    selected = "Interpolated", 
-    multiple = FALSE
+    selected = "Interpolated"
+  )
+)
+
+conditionalPanel(
+  condition = "input.plot_which_trend == 'Regional aggregates' | input.plot_which_trend == 'Both' ", 
+  radioButtons(
+    "lineup_or_survey_trend_interpolated", 
+    label    = "Plot interpolated or survey data:", 
+    choices  = c(
+      "Interpolated"
+    ), 
+    selected = "Interpolated"
   )
 )
 
@@ -359,7 +470,7 @@ conditionalPanel(
   condition  = "input.plot_which_trend == 'Regional aggregates'",
   selectInput(
     "select_regional_aggregates_trend", 
-    label    = "Selected regional aggregates", 
+    label    = "Selected regional aggregates:", 
     choices  = c(
       "All", 
       dt_region$Region_name[
@@ -386,7 +497,7 @@ conditionalPanel(
   condition  = "input.plot_which_trend == 'Selected economies'",
   selectInput(
     "select_economies_trend", 
-    label    = "Select economies", 
+    label    = "Select economies:", 
     choices  = c(
       dt_country$Country_name |> 
         unique() |> 
@@ -406,7 +517,7 @@ conditionalPanel(
   condition  = "input.plot_which_trend == 'Both'",
   selectInput(
     "select_both_trend", 
-    label    = "Select economies", 
+    label    = "Select economies:", 
     choices  = c(
       dt_region$Region_name[
         !dt_region$Region_name == "Global"
@@ -433,14 +544,14 @@ conditionalPanel(
 conditionalPanel(
   condition = "input.plot_which_trend == 'Regional aggregates'",
   selectInput("indicator_trend1_regionalaggregates",
-            label = "Select one indicator",
+            label = "Select one indicator:",
             choices = c(
               "Prosperity Gap", 
               "Mean", 
-              "(PG) Inequality", 
-              "Growth - Prosperity Gap", 
-              "Growth - Mean", 
-              "Growth - (PG) Inequality"
+              "(PG) Inequality"#, 
+              #"Growth - Prosperity Gap", 
+              #"Growth - Mean", 
+              #"Growth - (PG) Inequality"
              ),
             selected = "Prosperity Gap")
 )
@@ -449,14 +560,14 @@ conditionalPanel(
 conditionalPanel(
   condition = "input.plot_which_trend == 'Both'",
   selectInput("indicator_trend1_both",
-            label = "Select one indicator",
+            label = "Select one indicator:",
             choices = c(
               "Prosperity Gap", 
               "Mean", 
-              "(PG) Inequality",
-              "Growth - Prosperity Gap", 
-              "Growth - Mean", 
-              "Growth - (PG) Inequality"
+              "(PG) Inequality"#,
+              #"Growth - Prosperity Gap", 
+              #"Growth - Mean", 
+              #"Growth - (PG) Inequality"
              ),
             selected = "Prosperity Gap")
 )
@@ -465,16 +576,16 @@ conditionalPanel(
 conditionalPanel(
   condition = "input.plot_which_trend == 'Selected economies'",
   selectInput("indicator_trend1_economies",
-            label = "Select one indicator",
+            label = "Select one indicator:",
             choices = c(
               "Prosperity Gap", 
               "Mean", 
               "Mean - Bottom 40",
               "(PG) Inequality", 
-              "Growth - Prosperity Gap", 
-              "Growth - Mean", 
-              "Growth - Mean Bottom 40",
-              "Growth - (PG) Inequality", 
+              #"Growth - Prosperity Gap", 
+              #"Growth - Mean", 
+              #"Growth - Mean Bottom 40",
+              #"Growth - (PG) Inequality", 
               "Poverty headcount - $2.15", 
               "Poverty headcount - $3.65", 
               "Poverty headcount - $6.85"
@@ -488,14 +599,14 @@ conditionalPanel(
 conditionalPanel(
   condition = "input.plot_which_trend == 'Regional aggregates'",
   selectInput("indicator_trend2_regionalaggregates",
-            label = "Select second comparison indicator",
+            label = "Select second comparison indicator:",
             choices = c(
               "Prosperity Gap", 
               "Mean", 
-              "(PG) Inequality", 
-              "Growth - Prosperity Gap", 
-              "Growth - Mean", 
-              "Growth - (PG) Inequality"
+              "(PG) Inequality"#, 
+              #"Growth - Prosperity Gap", 
+              #"Growth - Mean", 
+              #"Growth - (PG) Inequality"
              ),
             selected = "Mean")
 )
@@ -504,14 +615,14 @@ conditionalPanel(
 conditionalPanel(
   condition = "input.plot_which_trend == 'Both'",
   selectInput("indicator_trend2_both",
-            label = "Select second comparison indicator",
+            label = "Select second comparison indicator:",
             choices = c(
               "Prosperity Gap", 
               "Mean", 
-              "(PG) Inequality",
-              "Growth - Prosperity Gap", 
-              "Growth - Mean", 
-              "Growth - (PG) Inequality"
+              "(PG) Inequality"#,
+              #"Growth - Prosperity Gap", 
+              #"Growth - Mean", 
+              #"Growth - (PG) Inequality"
              ),
             selected = "Mean")
 )
@@ -520,16 +631,16 @@ conditionalPanel(
 conditionalPanel(
   condition = "input.plot_which_trend == 'Selected economies'",
   selectInput("indicator_trend2_economies",
-            label = "Select second comparison indicator",
+            label = "Select second comparison indicator:",
             choices = c(
               "Prosperity Gap", 
               "Mean", 
               "Mean - Bottom 40",
               "(PG) Inequality", 
-              "Growth - Prosperity Gap", 
-              "Growth - Mean", 
-              "Growth - Mean Bottom 40",
-              "Growth - (PG) Inequality", 
+              #"Growth - Prosperity Gap", 
+              #"Growth - Mean", 
+              #"Growth - Mean Bottom 40",
+              #"Growth - (PG) Inequality", 
               "Poverty headcount - $2.15", 
               "Poverty headcount - $3.65", 
               "Poverty headcount - $6.85"
@@ -549,7 +660,7 @@ conditionalPanel(
   input.indicator_trend1_regionalaggregates == '(PG) Inequality' |
   input.indicator_trend1_regionalaggregates == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig1_regionalaggregates", 
-              label = "Log Y axis in Figure 1",  
+              label = "Log y-axis in Figure 1:",  
               value = FALSE)
 )
 conditionalPanel(
@@ -559,7 +670,7 @@ conditionalPanel(
   input.indicator_trend1_economies == '(PG) Inequality' |
   input.indicator_trend1_economies == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig1_economies", 
-              label = "Log Y axis in Figure 1",  
+              label = "Log y-axis in Figure 1:",  
               value = FALSE)
 )
 conditionalPanel(
@@ -569,7 +680,7 @@ conditionalPanel(
   input.indicator_trend1_both == '(PG) Inequality' |
   input.indicator_trend1_both == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig1_both", 
-              label = "Log Y axis in Figure 1",  
+              label = "Log y-axis in Figure 1:",  
               value = FALSE)
 )
 
@@ -581,7 +692,7 @@ conditionalPanel(
   input.indicator_trend2_regionalaggregates == '(PG) Inequality' |
   input.indicator_trend2_regionalaggregates == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig2_regionalaggregates", 
-              label = "Log Y axis in Figure 2",  
+              label = "Log y-axis in Figure 2:",  
               value = FALSE)
 )
 conditionalPanel(
@@ -591,7 +702,7 @@ conditionalPanel(
   input.indicator_trend2_economies == '(PG) Inequality' |
   input.indicator_trend2_economies == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig2_economies", 
-              label = "Log Y axis in Figure 2",  
+              label = "Log y-axis in Figure 2:",  
               value = FALSE)
 )
 conditionalPanel(
@@ -601,7 +712,7 @@ conditionalPanel(
   input.indicator_trend2_both == '(PG) Inequality' |
   input.indicator_trend2_both == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig2_both", 
-              label = "Log Y axis in Figure 2",  
+              label = "Log y-axis in Figure 2:",  
               value = FALSE)
 )
 
@@ -612,7 +723,7 @@ conditionalPanel(
 ## Select years to plot
 radioButtons(
   "all_years_plot_trend", 
-  label = "Select years to plot",  
+  label = "Select years to plot:",  
   choices = c(
     "All", 
     "Custom"
@@ -624,7 +735,7 @@ radioButtons(
 conditionalPanel(
   condition = "input.all_years_plot_trend == 'Custom'",
   selectInput("select_initial_year_trend", 
-              label = "Initial Year:",
+              label = "Initial year:",
               choices = dt_country$Year |> 
                 unique() |> 
                 sort(),
@@ -637,7 +748,7 @@ conditionalPanel(
 conditionalPanel(
   condition = "input.all_years_plot_trend == 'Custom'",
   selectInput("select_final_year_trend", 
-              label = "Final Year:",
+              label = "Final year:",
               choices = dt_country$Year |> 
                 unique() |> 
                 sort(),
@@ -806,7 +917,7 @@ dt_trend_plot1 <- reactive({
       "Growth - (PG) Inequality" = "Inequality_growth"
     )
     }
-    if(input$lineup_or_survey_trend == "Survey"){
+    if(input$lineup_or_survey_trend_interpolated == "Survey"){
     dt_trend_c1 <- copy(dt_country)
     } else {
       dt_trend_c1 <- copy(dt_lineup)
@@ -1018,7 +1129,7 @@ dt_trend_plot2 <- reactive({
       "Growth - (PG) Inequality" = "Inequality_growth"
     )
     }
-    if(input$lineup_or_survey_trend == "Survey"){
+    if(input$lineup_or_survey_trend_interpolated == "Survey"){
     dt_trend_c2 <- copy(dt_country)
     } else {
       dt_trend_c2 <- copy(dt_lineup)
@@ -1169,8 +1280,7 @@ if(input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regiona
       color  = Economy,
       group  = Survey_comparability
     ), 
-    alpha    = 0.8, 
-    linetype = "dotted"
+    alpha    = 0.8
   )
 }
 
@@ -1254,7 +1364,7 @@ tp1 <- layout(tp1,
               title = ""
             ),
             yaxis = list(
-              title = title_function2(ind_name),
+              title = title_function_y_2(ind_name),
               titlefont = list(size  = 12)
             )
 )
@@ -1347,8 +1457,7 @@ if(input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regiona
       color  = Economy,
       group  = Survey_comparability
     ), 
-    alpha    = 0.8, 
-    linetype = "dotted"
+    alpha    = 0.8
   )
 }
 tp1 <- tp1 +
@@ -1474,8 +1583,7 @@ if(input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regiona
       color  = Economy,
       group  = Survey_comparability
     ), 
-    alpha    = 0.8, 
-    linetype = "dotted"
+    alpha    = 0.8
   )
 }
 tp2 <- tp2 +
@@ -1542,8 +1650,8 @@ tp2 <- ggplotly(tp2, tooltip = "text")
 
 # Add Titles -------------------------------------------------------------------
 
-tp1 <- tp1 |> layout(xaxis = list(title = ''), yaxis = list(title = paste(title_function2(ind_name1)), titlefont = list(size  = 12)))
-tp2 <- tp2 |> layout(xaxis = list(title = ''), yaxis = list(title = paste(title_function2(ind_name2)), titlefont = list(size  = 12)))
+tp1 <- tp1 |> layout(xaxis = list(title = ''), yaxis = list(title = paste(title_function_y_2(ind_name1)), titlefont = list(size  = 12)))
+tp2 <- tp2 |> layout(xaxis = list(title = ''), yaxis = list(title = paste(title_function_y_2(ind_name2)), titlefont = list(size  = 12)))
 
 annotate_tp12 <- list(
   list(
@@ -1596,7 +1704,7 @@ tp1_and_2
 
 
 
-Decomposition of PG
+Decomposition
 ===========================================================
 
 
@@ -1608,7 +1716,7 @@ Sidebar {.sidebar data-width=200}
 
 selectInput(
   "level_or_growth_decomposition", 
-  label     = "Level or growth decomposition", 
+  label     = "Level or growth decomposition:", 
   choices   = c(
     "Level", 
     "Growth"
@@ -1651,7 +1759,7 @@ conditionalPanel(
                  "Global"
                ), 
                selected = c(
-                 "Sub-Saharan Africa"
+                 "East Asia & Pacific"
                ), 
                multiple = FALSE
   )
@@ -1659,7 +1767,7 @@ conditionalPanel(
 
 
 radioButtons("all_years_barchart", 
-                   label = "Years selection",  
+                   label = "Years selection:",  
                    choices = c(
                      "All", 
                      "Custom range", 
@@ -1671,7 +1779,7 @@ radioButtons("all_years_barchart",
 conditionalPanel(
   condition = "input.all_years_barchart == 'Custom range'",
   selectInput("select_initial_year_barchart", 
-              label = "Initial Year:",
+              label = "Initial year:",
               choices = dt_region$Year |> 
                 unique() |> 
                 sort(),
@@ -1683,7 +1791,7 @@ conditionalPanel(
 conditionalPanel(
   condition = "input.all_years_barchart == 'Custom range' && input.all_years_barchart != null",
   selectInput("select_final_year_barchart", 
-              label = "Final Year:",
+              label = "Final year:",
               choices = dt_region$Year |> 
                 unique() |> 
                 sort(),
@@ -1738,6 +1846,7 @@ downloadButtonRmd(
 Column {.tabset .tabset-fade}
 -----------------------------------------------------------------------
 
+### Chart
 
 ```{r data-barchart}
 
@@ -1839,14 +1948,17 @@ dt_barchart <- reactive({
       Year >= as.numeric(input$select_initial_year_barchart) & Year <= as.numeric(input$select_final_year_barchart)
     ]
     
-  } else{
+   } else if(input$all_years_barchart == "Custom selection") {
+    
+    dt_barchart <- dt_barchart[
+      Year %in% input$select_years_barchart
+    ]
+    
+  }else{
     dt_barchart
   }
      
-    # dt_barchart[
-    #   , 
-    #   Mean_growth := -Mean_growth
-    # ]
+
     
     dt_barchart <- dt_barchart |> 
       melt(
@@ -1875,6 +1987,11 @@ dt_barchart <- reactive({
       Indicator := -Indicator
     ]
     
+    dt_barchart[
+      , 
+      Indicator := Indicator*100
+    ]
+    
     
   }
 
@@ -1886,9 +2003,7 @@ dt_barchart <- reactive({
 
 ```{r plot-barchart}
 
-# renderTable({
-#   dt_barchart()
-# })
+
 renderHighchart({
 
 # Data manipulation ------------------------------------------------------------
@@ -1957,19 +2072,26 @@ if(input$level_or_growth_decomposition == "Level"){
   hcaes(x = Year, y = Indicator, group = Group)
   ) |>
   hc_plotOptions(column = list(stacking = "normal")) |>
-  hc_yAxis(title = list(text = "Prosperity Gap"), #title_function2(input$indicator_barchart)), 
+  hc_yAxis(title = list(text = "Prosperity Gap"), 
            gridLineWidth =0) |>
   hc_xAxis(categories = unique(dt$Year)) |>
   hc_legend(reverse = TRUE) |> 
-  hc_credits(enabled = TRUE, text = paste0("Source: ", source_text, ". Accessed on ", today())) |>
-  hc_title(text = paste0("Decomposition of ", "Prosperity Gap" #title_function2("Prosperity G")
+  hc_credits(enabled = TRUE, text = paste0("Source: ", source_text)) |>
+  hc_title(text = paste0("Decomposition of ", "Prosperity Gap" 
                          , " by region")) |> 
   hc_add_theme(my_own_theme) |> 
-  hc_xAxis(categories = list("Europe & blabla Asia", "Latin America & Caribbean","Middle East & North Africa", "Other High Income Countries","South Asia", "Sub-Saharan Africa", "East Asia & Pacific" )) |>
+  hc_xAxis(categories = list("Europe & Asia", "Latin America & Caribbean","Middle East & North Africa", "Other High Income Countries","South Asia", "Sub-Saharan Africa", "East Asia & Pacific" )) |>
   hc_add_series(data = dt_global, type = "line", hcaes(x = Year, y = Indicator, group = Group), color = "black")
 
   
 } else {
+  
+  dt_pg <- rbindlist(
+    list(
+      dt_pg[, .(Indicator, Year, Group)], 
+      data.table(Indicator = 0L, Year = seq(from = min(dt_pg$Year), to = max(dt_pg$Year)), Group = "Zero growth line")
+    )
+  )
   
     # Create stacked bar chart
   hchart(
@@ -1978,16 +2100,23 @@ if(input$level_or_growth_decomposition == "Level"){
   hcaes(x = Year, y = Indicator, group = Group)
   ) |>
   hc_plotOptions(column = list(stacking = "normal")) |>
-  hc_yAxis(title = list(text = "Annual growth rates"), 
-           gridLineWidth =0) |>
+  hc_yAxis(title = list(text = "Annual growth rates (percentage)"), 
+           gridLineWidth =0#,
+           #plotlines = list(list(value = 1, color = "red", width = 2,
+                            #   dashstyle = "shortdash"))
+           ) |>
   hc_xAxis(categories = unique(dt$Year)) |>
   hc_legend(reverse = TRUE) |> 
-  hc_credits(enabled = TRUE, text = paste0("Source: ", source_text, ". Accessed on ", today())) |>
+  hc_credits(enabled = TRUE, text = paste0("Source: ", source_text)) |>
   hc_title(text = paste0("Decomposition of ", "growth in Prosperty Gap" 
                          , " for selected region")) |> 
   hc_add_theme(my_own_theme) |> 
   hc_xAxis(categories = list("Inequality growth", "Mean growth", "PG growth")) |>
-  hc_add_series(data = dt_pg, type = "line", hcaes(x = Year, y = Indicator, group = Group), color = "black")
+  hc_add_series(data = dt_pg, type = "line", hcaes(x = Year, y = Indicator, group = Group), color = c("black", "grey"), chart.plotOptions.line.marker.enabled = FALSE) #|> 
+  #hc_add_series(data = data.table(Indicator = 0L, Year = seq(from = 1990, to = 2019), Group = "Zero growth line"), 
+  #              hcaes(x = Year, y = Indicator, Group = Group), 
+  #              type = "line", color = "darkgrey")
+    
   
   
 }
@@ -1997,9 +2126,33 @@ if(input$level_or_growth_decomposition == "Level"){
 
 
 
+output$DownloadButtonBarchart <- downloadHandler(
+  filename = function() {
+    paste("prosperity-gap-decomposition", Sys.Date(), ".csv", sep = "")
+  },
+  content = function(file) {
+    write.csv(
+      dt_barchart()
+      , file)
+  }
+)
+
+
+
 ```
 
+### Explanation
 
+<span class="underline">Level decomposition:</span>
+
+<p style="text-align: justify;">
+    This chart shows the level of global Prosperity Gap decomposed annually by regional contributions. Regional contribution is the regional Prosperity Gap adjusted for by the region’s share of global population.</p>
+
+<span class="underline">Growth decomposition:</span>
+
+<p style="text-align: justify;">
+    This chart shows the annual growth in the Prosperity Gap decomposed into the growth in the mean and the changes in inequality. Note that a negative growth in the Prosperity Gap indicates improving welfare as does a decline in inequality. Since the mean in the decomposition of the Prosperity Gap is in the denominator, the negative growth in the mean in this chart also shows an improvement.
+</p>
 
 
 Change over Time
@@ -2014,13 +2167,14 @@ Sidebar {.sidebar data-width=200}
 # Plot by ----------------------------------------------------------------------
 
 ## Plot single region aggregate or 
-radioButtons("plot_which_change", 
+selectInput("plot_which_change", 
                    label = "Plot:",  
                    choices = c(
                      "Regional aggregates", 
                      "Countries"
                    ), 
-                   selected = c("Regional aggregates"))
+                   selected = c("Regional aggregates"), 
+                   multiple = FALSE)
 
 
 
@@ -2031,7 +2185,7 @@ conditionalPanel(
   condition = "input.plot_which_change == 'Regional aggregates'", 
   selectInput(
     "indicator_region_change", 
-    label    = "Select indicator", 
+    label    = "Select indicator:", 
     choices  = c(
       "Prosperity Gap", 
       "Mean", 
@@ -2045,7 +2199,7 @@ conditionalPanel(
   condition = "input.plot_which_change == 'Countries'", 
   selectInput(
     "indicator_country_change", 
-    label    = "Select indicator", 
+    label    = "Select indicator:", 
     choices  = c(
       "Prosperity Gap", 
       "Mean", 
@@ -2096,7 +2250,7 @@ conditionalPanel(
   condition = "input.plot_which_change == 'Countries'", 
   sliderInput(
     "window_change", 
-    label = "Circa years window", 
+    label = "Circa years window:", 
     min   = 0, 
     max   = 5, 
     value = 0, 
@@ -2109,7 +2263,7 @@ conditionalPanel(
   condition = "input.plot_which_change == 'Countries'", 
   selectInput(
   "do_not_plot", 
-  label    = "Remove from plot", 
+  label    = "Remove from plot:", 
   choices  = c(
     countries_lookup$Region_name |> 
       sort() |> 
@@ -2395,17 +2549,6 @@ pp <- ggplotly(p, tooltip = "text")
 
 pp <- pp |>
    layout(
-     # images = list(
-     #   list(
-     #     source = base64enc::dataURI(file = "Logo/logo_horizontal.png"),
-     #         xref = "paper",
-     #        yref = "paper",
-     #        x= 0.8,
-     #        y= -0.05,
-     #        sizex = 0.15,
-     #        sizey = 0.15,
-     #        opacity = 0.8
-     #   )),
        annotations =
                  list(
                    x = 0,
@@ -2439,7 +2582,7 @@ pp <- layout(pp,
               size  = 14
             ),
             xaxis = list(
-              title = title_function(indicator_change),
+              title = title_function_y(indicator_change),
               titlefont = list(size = 12)
             ),
             yaxis = list(
@@ -2453,6 +2596,17 @@ pp
 })
 
 
+
+output$DownloadButtonChange <- downloadHandler(
+  filename = function() {
+    paste("prosperity-gap-change", Sys.Date(), ".csv", sep = "")
+  },
+  content = function(file) {
+    write.csv(
+      dt_use()
+      , file)
+  }
+)
 
 
 ```
@@ -2518,14 +2672,14 @@ selectInput("ineq_indicatorY",
  
 
 selectInput("select_welfare_type", 
-              label = "Survey Type:", 
+              label = "Survey type:", 
               choices = c("Both", "Consumption", "Income"), 
               selected = "Both"
 )
 
 checkboxGroupInput(
   inputId  = "log_transformations", 
-  label    = "Log Transformations:", 
+  label    = "Log transformations:", 
   choices  = c("Y axis", "X axis"), 
   selected = NULL
 )
@@ -2533,7 +2687,7 @@ checkboxGroupInput(
 
 
 selectInput("countries_selected",
-            label    = "Select economies",
+            label    = "Select economies:",
             choices  = c(
               "All", 
               countries_lookup$Region_name |> unique(), 
@@ -2543,7 +2697,7 @@ selectInput("countries_selected",
             multiple = TRUE)
 # Select region for scatter plot to highlight
 selectInput("background_regions",
-            label    = "Select comparison economies",
+            label    = "Select comparison economies:",
             choices  = c(
               "All", 
               countries_lookup$Region_name |> 
@@ -2561,7 +2715,7 @@ radioButtons("color_by",
                    selected = c("Region"))
 
 radioButtons("all_years_scatterplot", 
-                   label = "Select years to plot",  
+                   label = "Select years to plot:",  
                    choices = c(
                      "All", 
                      "Custom"
@@ -2571,7 +2725,7 @@ radioButtons("all_years_scatterplot",
 conditionalPanel(
   condition = "input.all_years_scatterplot == 'Custom'",
   selectInput("select_initial_year_scatterplot", 
-              label = "Initial Year:",
+              label = "Initial year:",
               choices = dt_country$Year |> 
                 unique() |> 
                 sort(),
@@ -2583,7 +2737,7 @@ conditionalPanel(
 conditionalPanel(
   condition = "input.all_years_scatterplot == 'Custom'",
   selectInput("select_final_year_scatterplot", 
-              label = "Final Year:",
+              label = "Final year:",
               choices = dt_country$Year |> 
                 unique() |> 
                 sort(),
@@ -2611,7 +2765,7 @@ observeEvent(input$select_initial_year_scatterplot,
 Advanced Features:
 ```{r}
 checkboxInput("add_line", 
-              label = "Add fitted line", 
+              label = "Add fitted line:", 
               value = FALSE)
 
 
@@ -2993,7 +3147,7 @@ sp1_plotly <- layout(sp1_plotly,
             titlefont = list(size = 14),
             xaxis = list(title = title_function2(input$ineq_indicatorX), titlefont = list(size = 12)),
             yaxis = list(
-              title = title_function2(input$ineq_indicatorY),
+              title = title_function_y_2(input$ineq_indicatorY),
               titlefont = list(size = 12)
             )
 )
@@ -3005,30 +3159,18 @@ sp1_plotly
 })
 
 
-reactive({
 
-dt <- dt_use_sp()
-dt <- dt[
-  ,
-  .(Country_name, Region_name, IndicatorX, IndicatorY)
-]
-setnames(
-  dt,
-  old = c("IndicatorX", "IndicatorY"),
-  new = c(ineq_indic_X, "PG")
-)
 output$DownloadButtonScatterplot <- downloadHandler(
   filename = function() {
     paste("prosperity-gap-scatterplot", Sys.Date(), ".csv", sep = "")
   },
   content = function(file) {
     write.csv(
-      dt
+      dt_country
       , file)
   }
 )
 
-})
 
 
 ```
@@ -3042,9 +3184,9 @@ output$DownloadButtonScatterplot <- downloadHandler(
 
 
 
-<p style='text-align:justify;'>This scatterplot shows the relationship between two selected indicators. By default, it shows all data, regardless of economy, region, or whether welfare is measured by consumption or income. Making selections on the side panel will limit the display to the selected data (e.g. selecting SSA as the region and consumption as the welfare measure plots data for Sub-Saharan Africa where welfare is measured by consumption). The selected data can be compared against other economies or regions. Dots are colored by region. The chart sorts countries by PIP’s regional definition: East Asia and Pacific  (EAP), Europe and Central Asia (ECA), Latin America and the Caribbean (LAC), Middle East and North Africa (MNA), Other High Income (OHI), South Asia (SAS), Sub-Saharan Africa (SSA).</p>
+<p style='text-align:justify;'>This scatterplot shows the relationship between two selected indicators. By default, it shows all data, regardless of economy, region, or whether welfare is measured by consumption or income. Making selections on the side panel will limit the display to the selected data (e.g. selecting Sub-Saharan Africa as the “Select economies” and consumption as the “Survey type” plots data for countries in Sub-Saharan Africa where welfare in survey is measured by consumption). The selected data can be compared against other economies or regions. Dots are colored by region by default, and users have the choice to color by income group or use a uniform color for all data points.</p>
 
-<p style='text-align:justify;'>The plot provides a feature for incorporating a line to depict the underlying relationship between variables. This line represents the conditional mean, estimated via locally estimated scatterplot smoothing (LOESS), and is accompanied by 95% confidence intervals. </p>
+<p style='text-align:justify;'>The plot provides a feature for incorporating a line to depict the underlying relationship between variables. This line represents the conditional mean, estimated via locally estimated scatterplot smoothing (LOESS), and is accompanied by 95\% confidence intervals. </p>
 
 
 
@@ -3052,29 +3194,30 @@ Table of Indicators
 ===========================================================
 
 
-Sidebar {.sidebar data-width=150}
+Sidebar {.sidebar data-width=200}
 -----------------------------------------------------------------------
 
 ```{r sidebar-table-1}
 
+
 # Region or country
 selectInput(
   "table_region_or_country", 
-  label    = "Show regions or countries", 
+  label    = "Show regional aggregates or countries:", 
   choices  = c(
-    "Regions", 
+    "Regional aggregates", 
     "Countries"
   ), 
   selected = c(
-    "Regions"
+    "Regional aggregates"
   ), 
   multiple = FALSE
 )
 
 # Select Indicator
 conditionalPanel(
-  condition = "input.table_region_or_country == 'Regions'", 
-  checkboxGroupInput("ineq_indicator_table_region", 
+  condition = "input.table_region_or_country == 'Regional aggregates'", 
+  selectInput("ineq_indicator_table_region", 
             label = "Indicators:",
             choices = c(
               "Prosperity Gap",
@@ -3083,11 +3226,12 @@ conditionalPanel(
             ),
             selected =  c(
               "Prosperity Gap"
-            ))
+            ), 
+            multiple = TRUE)
 )
 conditionalPanel(
   condition = "input.table_region_or_country == 'Countries'", 
-  checkboxGroupInput("ineq_indicator_table_country", 
+  selectInput("ineq_indicator_table_country", 
             label = "Indicators:",
             choices = c(
               "Prosperity Gap",
@@ -3097,7 +3241,8 @@ conditionalPanel(
             ),
             selected =  c(
               "Prosperity Gap"
-            )
+            ), 
+            multiple = TRUE
             )
 )
 
@@ -3123,7 +3268,7 @@ conditionalPanel(
 
 
 radioButtons("all_years_table", 
-                   label = "Years shown in table",  
+                   label = "Years shown in table:",  
                    choices = c(
                      "Latest", 
                      "All", 
@@ -3135,7 +3280,7 @@ radioButtons("all_years_table",
 conditionalPanel(
   condition = "input.all_years_table == 'Custom'",
   selectInput("select_initial_year_table", 
-              label = "Initial Year:",
+              label = "Initial year:",
               choices = dt_country$Year |> 
                 unique() |> 
                 sort(),
@@ -3147,7 +3292,7 @@ conditionalPanel(
 conditionalPanel(
   condition = "input.all_years_table == 'Custom' && input.select_initial_year_table != null",
   selectInput("select_final_year_table", 
-              label = "Final Year:",
+              label = "Final year:",
               choices = dt_country$Year |> 
                 unique() |> 
                 sort(),
@@ -3196,7 +3341,7 @@ Row {.tabset .tabset-fade}
 
 
 make_table_across_countries <- function(
-    dt_1,
+    #dt_1,
     country_name_vec,
     ineq_indicators,
     years_selected = c("All", "Latest", "Custom"),
@@ -3288,14 +3433,14 @@ ineq_indicators <- dt_indicators$ineq_indicators
 
   dt # return
 
-} else if(input$table_region_or_country == "Regions"){
+} else if(input$table_region_or_country == "Regional aggregates"){
   
   # Copy
   dt <- copy(dt_region)
 
   # Check Inputs ----
   stopifnot(is.data.table(dt))
-  stopifnot(country_name_vec %chin% countries_lookup$Region_name)
+  stopifnot(country_name_vec %chin% c(countries_lookup$Region_name |> unique(), "Global"))
   years_selected <- match.arg(years_selected)
 
   indicators_names <- ineq_indicators
@@ -3327,11 +3472,6 @@ ineq_indicators <- dt_indicators$ineq_indicators
      old = c("Region_name"),
      new = c("Region")                           # Clean variable names
    )
-   # setnames(
-   #   dt,
-   #   old = colnames(dt),
-   #   new = stringr::str_to_title(colnames(dt))             # Capitalize column names
-   # )
 
 
    dt <- dt[
@@ -3406,12 +3546,12 @@ table <-
     }
     } else{
       
-    ct <- countries_lookup$Region_name
+    ct <- c(countries_lookup$Region_name, "Global")
           
     }
     
     table <- make_table_across_countries(
-      dt               = dt_pip,
+     # dt               = dt_pip,
       country_name_vec = ct,
       ineq_indicators  = indic,
       years_selected   = input$all_years_table,
@@ -3515,30 +3655,22 @@ About and Definitions {#tab_about}
 Column {.tabset}
 -----------------------------------------------------------------------
 
-### About {#About}
+### About Page {#About}
 
 <!-- {data-width=500} -->
-<p style='text-align:justify;'>This dashboard provides a set of interactive visualizations focused on the *Prosperity Gap* and associated indicators. The Prosperity Gap is the average factor by which incomes need to be multiplied to bring everyone in the society to the prosperity standard of \$25 daily income expressed in 2017 PPPs. A Prosperity Gap of 5 implies that incomes in that society need to be increased on average 500% for everyone to reach the \$25/day threshold.</p>
+<p style='text-align:justify;'>This dashboard provides a set of interactive visualizations focused on the *Prosperity Gap* and associated indicators. The Prosperity Gap is the average factor by which incomes need to be multiplied to bring everyone in the society to the prosperity standard of \$25 daily income expressed in 2017 PPPs. \$25 a day is close to the poverty line of a typical high-income country. A Prosperity Gap of 5 implies that incomes in that society need to be increased on average 500\% for everyone to reach the \$25/day threshold. Put differently, the typical person would have to work for 5 days to earn the same amount as a person at the poverty line in rich countries would earn in a day.</p>
 
+<p style='text-align:justify;'>Other indicators include the mean of the distribution, the mean of the bottom 40% of the distribution, an inequality measure corresponding to the Prosperity Gap— *(PG) Inequality* —measure, and headcount poverty at \$2.15, \$3.65, and \$6.85 a day. (PG) Inequality is the average factor by which incomes need to be multiplied to bring everyone in the society to the mean income of that society. The dashboard can be used to compare the measures of a country, region, or the world across time or between each other.</p>
 
+<p style='text-align:justify;'>For more details on the Prosperity Gap, see [this blog on its technical properties](https://blogs.worldbank.org/impactevaluations/can-we-have-welfare-index-easy-understand-also-distribution-sensitive), another [blog on how it measures shared prosperity](https://blogs.worldbank.org/developmenttalk/prosperity-gap-proposed-new-indicator-monitor-shared-prosperity), as well as the [technical paper](https://documents.worldbank.org/en/publication/documents-reports/documentdetail/099934305302318791/idu0325015fc0a4d6046420afe405cb6b6a87b0b).</p>
 
-<p style='text-align:justify;'>Other indicators include the mean of the distribution, the mean of the bottom 40\% of the distribution, and an inequality measure corresponding to the Prosperity Gap (*PG-Inequality*) measure. The latter shows the average factor by which incomes need to be multiplied to bring everyone in the society to the mean income of that society. The dashboard can be used to compare the measures of a country, region, or the world across time or between each other.</p>
+<p style='text-align:justify;'>The underlying data is based on the same household surveys used in the [Poverty and Inequality Platform (PIP)](https://pip.worldbank.org/home) to report global poverty by the World Bank. The estimates in this dashboard are calculated using 1000-point binned distribution derived from the country-level household survey unit record data or grouped data. It is important to note that these estimates are preliminary, as they are estimated on a grouped version of the income distributions instead of the micro data directly. Furthermore, since the Prosperity Gap is sensitive to low values of consumption, additional analytical work is being done to refine an appropriate censoring threshold (currently set at $0.50 per day). Finally, when survey data is missing, the poverty estimates reported in PIP are based on interpolations and extrapolations of the available surveys which requires [additional assumptions](https://datanalytics.worldbank.org/PIP-Methodology/). The regional and global estimates of the Prosperity Gap reported in this dashboard utilize the interpolated country data following the same [methodology](https://datanalytics.worldbank.org/PIP-Methodology/) as PIP. A version of the 1000-point lineup-binned dataset is described in [Mahler ⓡ  al (2022)](https://documents.worldbank.org/en/publication/documents-reports/documentdetail/099250510052241154/idu01d94e70603dc804f990b6130751d75dccb52).</p>
 
-<p style='text-align:justify;'>For more details on the prosperity gap, see [this blog on its technical properties](https://blogs.worldbank.org/impactevaluations/can-we-have-welfare-index-easy-understand-also-distribution-sensitive), another [blog on how it measures shared prosperity](https://blogs.worldbank.org/developmenttalk/prosperity-gap-proposed-new-indicator-monitor-shared-prosperity), as well as a [technical paper](https://documents.worldbank.org/en/publication/documents-reports/documentdetail/099934305302318791/idu0325015fc0a4d6046420afe405cb6b6a87b0b).</p>
-
-<p style='text-align:justify;'>The underlying data is based on the same household surveys used in the [Poverty and Inequality Platform](https://pip.worldbank.org/home) to report global poverty by the World Bank. The estimates in this dashboard are calculated using 1000-point binned distribution derived from the country-level household survey unit record data or grouped data. It is important to note that these estimates are preliminary, as they are estimated on a grouped version of the income distributions instead of the micro data directly. Furthermore, since the Prosperity Gap is sensitive to low values of consumption, additional analytical work is being done to refine an appropriate censoring threshold (currently set at $0.50 per day). Finally, when survey data is missing, the poverty estimates reported in PIP are based on interpolations and extrapolations of the available surveys which requires [additional assumptions](https://datanalytics.worldbank.org/PIP-Methodology/). The regional and global estimates of the Prosperity Gap reported in this dashboard follow the same methodology when survey data are not available. The 1000-point lineup-binned dataset is described in [Mahler ⓡ  al (2022)](https://documents.worldbank.org/en/publication/documents-reports/documentdetail/099250510052241154/idu01d94e70603dc804f990b6130751d75dccb52).</p>
-
-
-
-<p style='text-align:justify;'>Any breaks in the trends for a country implies that the surveys are incomparable, for example due to changes in questionnaire design. The visualization of changes over time only includes countries that have a comparable survey spell over the period chosen. </p>
+<p style='text-align:justify;'>When plotting country trends from survey data, any breaks in the trends implies that the surveys are incomparable, for example due to changes in questionnaire design. The visualization of changes over time only includes countries that have a [comparable survey spell](https://datanalytics.worldbank.org/PIP-Methodology/welfareaggregate.html#comparability) over the selected period. </p>
 
 <p style='text-align:justify;'>The term country, used interchangeably with economy, does not imply political independence but refers to any territory for which authorities report separate social or economic statistics. </p>
 
 <p style='text-align:justify;'>Please cite the data as:  “Kraay ⓡ  al (2023) updated using Poverty and Inequality Platform (version 20230919_2017).” .</p>
-
-
-
-
 
 
 ### Definitions {#Definitions}
@@ -3552,7 +3684,7 @@ Column {.tabset}
 
 <p style='text-align:justify;'> *Mean of the bottom 40\%* - the daily per person mean income of the bottom 40% of the distribution expressed in 2017 PPPs.</p>
 
-<p style='text-align:justify;'> *Prosperity Gap, Inequality* - the average factor by which incomes need to be multiplied to bring everyone in the society to the mean income of that society..</p>
+<p style='text-align:justify;'> *Prosperity Gap, Inequality (PG Inequality)* - the average factor by which incomes need to be multiplied to bring everyone in the society to the mean income of that society..</p>
 
 
 <span class="underline">Other variables:</span>
@@ -3561,9 +3693,9 @@ Column {.tabset}
 
 <p style='text-align:justify;'>
 
-The **Year** variable is the starting year of the household survey. In some countries, the data collection spans multiple years. When looking at changes over time, users can select **circa years** (i.e., a window around the chosen year). This increases the sample of countries available, since not all countries have annual household surveys, as explained in more detail on the chart page.</p>
+The *Year* variable is the starting year of the household survey. In some countries, the data collection spans multiple years. When looking at changes over time, users can select *circa years* (i.e., a window around the chosen year). This increases the sample of countries available, since not all countries have annual household surveys, as explained in more detail on the chart page.</p>
 
-<p style='text-align:justify;'>Countries can also be grouped by **region**. The dashboard uses PIP’s [regional definition](https://datanalytics.worldbank.org/PIP-Methodology/lineupestimates.html#regionsandcountries) which differs from the regional classifications used by the World Bank. Some high-income economies are excluded from the geographical regions and are included as a separate group referred to as “other high income”.</p>
+<p style='text-align:justify;'>Countries can also be grouped by *region*. The dashboard uses PIP’s [regional definition](https://datanalytics.worldbank.org/PIP-Methodology/lineupestimates.html#regionsandcountries) which differs from the regional classifications used by the World Bank. Some high-income economies are excluded from the geographical regions and are included as a separate group referred to as “other high income”.</p>
 
 
 
