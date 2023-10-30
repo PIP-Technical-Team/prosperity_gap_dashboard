@@ -218,7 +218,7 @@ title_function_y_2 <- function(ind){
   )
   
   title_use_vec <- c(
-    "Prosperity Gap \n (Declines correspond to an improvement)",
+    "Prosperity Gap \n (Lower values correspond to better outcomes)",
     "Mean (daily p.c., 2017 $PPP)", 
     "Mean of bottom 40 (daily p.c.)", 
     "(PG) Inequality", 
@@ -261,7 +261,7 @@ title_function_y <- function(ind){
   title_use_vec <- c(
     "Mean (daily per capita, 2017 $PPP)", 
     "Mean of bottom 40 (daily pc, 2017 $PPP)",
-    "Prosperity Gap \n (Declines correspond to an improvement)", 
+    "Prosperity Gap \n (Lower values correspond to better outcomes)", 
     "(PG) Inequality", 
     "Growth in Prosperity Gap", 
     "Growth in Mean (daily p.c., 2017 $PPP)", 
@@ -2681,7 +2681,7 @@ checkboxGroupInput(
   inputId  = "log_transformations", 
   label    = "Log transformations:", 
   choices  = c("Y axis", "X axis"), 
-  selected = NULL
+  selected = c("X axis")
 )
 
 
@@ -2936,17 +2936,6 @@ if (input$color_by == "Region") {
 # Extract the 'bla' column to a vector
 col_vec <- dt$col_vec
 
-
-# dt_use_sp <- dt_use_sp |> 
-#   mutate(
-#     Color = ifelse(
-#       country_name %chin% selected_countries(), 
-#       ifelse(
-#         input$color_by == "Region", dt_use_sp$region_name, dt_use_sp$incgroup_current
-#       ), 
-#       "Other"
-#     )
-#   )
     
 dt_use_sp[
   , 
@@ -3141,8 +3130,9 @@ sp1_plotly <- sp1_plotly |>
                    font=list(size=6, color="grey")
                  ))
 
-
-sp1_plotly <- layout(sp1_plotly,
+if((!c("X axis" %chin% input$log_transformations)) & (!c("Y axis" %chin% input$log_transformations))){
+  
+  sp1_plotly <- layout(sp1_plotly,
             title = list(text = paste("Relationship between", title_function2(input$ineq_indicatorX), "and", title_function2(input$ineq_indicatorY))),
             titlefont = list(size = 14),
             xaxis = list(title = title_function2(input$ineq_indicatorX), titlefont = list(size = 12)),
@@ -3151,6 +3141,47 @@ sp1_plotly <- layout(sp1_plotly,
               titlefont = list(size = 12)
             )
 )
+  
+} else if((c("X axis" %chin% input$log_transformations)) & (!c("Y axis" %chin% input$log_transformations))){
+  
+    sp1_plotly <- layout(sp1_plotly,
+            title = list(text = paste("Relationship between", title_function2(input$ineq_indicatorX), "and", title_function2(input$ineq_indicatorY))),
+            titlefont = list(size = 14),
+            xaxis = list(title = paste(title_function2(input$ineq_indicatorX), "\n (logarithmic scale)"), titlefont = list(size = 12)),
+            yaxis = list(
+              title = title_function_y_2(input$ineq_indicatorY),
+              titlefont = list(size = 12)
+            )
+)
+  
+} else if((!c("X axis" %chin% input$log_transformations)) & c("Y axis" %chin% input$log_transformations)){
+  
+    sp1_plotly <- layout(sp1_plotly,
+            title = list(text = paste("Relationship between", title_function2(input$ineq_indicatorX), "and", title_function2(input$ineq_indicatorY))),
+            titlefont = list(size = 14),
+            xaxis = list(title = title_function2(input$ineq_indicatorX), titlefont = list(size = 12)),
+            yaxis = list(
+              title = paste(title_function_y_2(input$ineq_indicatorY), "\n (logarithmic scale)"),
+              titlefont = list(size = 12)
+            )
+)
+  
+}else if((c("X axis" %chin% input$log_transformations)) & c("Y axis" %chin% input$log_transformations)){
+  
+    sp1_plotly <- layout(sp1_plotly,
+            title = list(text = paste("Relationship between", title_function2(input$ineq_indicatorX), "and", title_function2(input$ineq_indicatorY))),
+            titlefont = list(size = 14),
+            xaxis = list(title = paste(title_function2(input$ineq_indicatorX), "\n (logarithmic scale)"), titlefont = list(size = 12)),
+            yaxis = list(
+              title = paste(title_function_y_2(input$ineq_indicatorY), "\n (logarithmic scale)"),
+              titlefont = list(size = 12)
+            )
+)
+  
+}
+
+
+
 
 
 sp1_plotly
