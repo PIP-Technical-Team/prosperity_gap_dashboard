@@ -67,6 +67,56 @@ library("zoo")
 library("collapse")
 ```
 
+```{r data-import, include=FALSE}
+
+url_data <- "https://github.com/PIP-Technical-Team/prosperity_gap_data/"
+url_raw_file <- "https://raw.githubusercontent.com/PIP-Technical-Team/prosperity_gap_data/main/"
+my_token <- Sys.getenv("GITHUB_PAT")
+
+read_data <- function(file, 
+                      url = url_raw_file, #usr_name, 
+                      token, 
+                      fst = FALSE, 
+                      csv = TRUE) {
+  
+  url <- paste0(url, file)
+  response  <- httr::GET(url, 
+                         httr::authenticate("x-access-token", 
+                                            token, 
+                                            type = "basic"))
+  temp_file <- tempfile(fileext = ".csv")
+  writeBin(httr::content(response, 
+                         as = "raw"), 
+           temp_file)
+  if (fst) {
+    data <- fst::read_fst(temp_file,
+                          as.data.table = TRUE)
+  } else if (csv) {
+    data <- fread(temp_file,
+                  check.names = TRUE)
+  } else {
+    data <- readxl::read_excel(temp_file)
+  }
+  unlink(temp_file)
+  
+  data
+}
+
+# List of CSV files to be read
+csv_files <- paste0("PIPinput_", 
+                    c("lineup", "region", "survey"),
+                    ".csv")
+
+# Apply the function to each CSV file
+data_list <- lapply(csv_files, function(file_name) {
+  read_data(url = url_raw_file, file_name, token = my_token)
+})
+
+names(data_list) <- c("lineup", "region", "survey")
+
+
+```
+
 
 ```{r data-prep, include=FALSE}
 # DATA  ----
