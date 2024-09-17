@@ -1,5 +1,5 @@
 ---
-title: "Prosperity Gap Dashboard"
+title: "Prosperity Gap"
 output:
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -240,11 +240,11 @@ title_function2 <- function(ind){
   title_lookup <- c(
     "Prosperity Gap",
     "Mean", 
-    "Mean - Bottom 40", 
+    #"Mean - Bottom 40", 
     "(PG) Inequality", 
     "Growth - Prosperity Gap", 
     "Growth - Mean", 
-    "Growth - Mean Bottom 40",
+    #"Growth - Mean Bottom 40",
     "Growth - (PG) Inequality", 
     "Poverty headcount - $2.15",
     "Poverty headcount - $3.65",
@@ -254,11 +254,11 @@ title_function2 <- function(ind){
   title_use_vec <- c(
     "Prosperity Gap",
     "Mean (daily p.c., 2017 $PPP)", 
-    "Mean of bottom 40 (daily p.c.)", 
+    #"Mean of bottom 40 (daily p.c.)", 
     "(PG) Inequality", 
     "Growth in Prosperity Gap", 
     "Growth in Mean (daily pc, 2017 $PPP)", 
-    "Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
+    #"Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
     "Growth in (PG) Inequality", 
     "Poverty headcount - $2.15 (daily p.c.)",
     "Poverty headcount - $3.65 (daily p.c.)", 
@@ -280,11 +280,11 @@ title_function_y_2 <- function(ind){
   title_lookup <- c(
     "Prosperity Gap",
     "Mean", 
-    "Mean - Bottom 40", 
+    #"Mean - Bottom 40", 
     "(PG) Inequality", 
     "Growth - Prosperity Gap", 
     "Growth - Mean", 
-    "Growth - Mean Bottom 40",
+    #"Growth - Mean Bottom 40",
     "Growth - (PG) Inequality", 
     "Poverty headcount - $2.15",
     "Poverty headcount - $3.65",
@@ -294,11 +294,11 @@ title_function_y_2 <- function(ind){
   title_use_vec <- c(
     "Prosperity Gap \n (Lower values correspond to better outcomes)",
     "Mean (daily p.c., 2017 $PPP)", 
-    "Mean of bottom 40 (daily p.c.)", 
+    #"Mean of bottom 40 (daily p.c.)", 
     "(PG) Inequality", 
     "Growth in Prosperity Gap", 
     "Growth in Mean (daily pc, 2017 $PPP)", 
-    "Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
+    #"Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
     "Growth in (PG) Inequality", 
     "Poverty headcount - $2.15 (daily p.c.)",
     "Poverty headcount - $3.65 (daily p.c.)", 
@@ -320,13 +320,13 @@ title_function_y_2 <- function(ind){
 title_function_y <- function(ind){
   
   title_lookup <- c("Mean", 
-                    "Mean_b40", 
+                    #"Mean_b40", 
                     "PG", 
                     "Inequality", 
                     "PG_growth", 
                     "Inequality_growth", 
                     "Mean_growth", 
-                    "Mean_b40_growth", 
+                    #"Mean_b40_growth", 
                     "Headcount215",
                     "Headcount365",
                     "Headcount685"
@@ -334,12 +334,12 @@ title_function_y <- function(ind){
   
   title_use_vec <- c(
     "Mean (daily per capita, 2017 $PPP)", 
-    "Mean of bottom 40 (daily pc, 2017 $PPP)",
+    #"Mean of bottom 40 (daily pc, 2017 $PPP)",
     "Prosperity Gap \n (Lower values correspond to better outcomes)", 
     "(PG) Inequality", 
     "Growth in Prosperity Gap", 
     "Growth in Mean (daily p.c., 2017 $PPP)", 
-    "Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
+    #"Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
     "Growth in (PG) Inequality", 
     "Poverty headcount - $2.15 daily p.c.",
     "Poverty headcount - $3.65 daily p.c.", 
@@ -376,12 +376,14 @@ create_data_imputed_by_countries_two_years_pg <- function(
   dt_use <- copy(dt)
   
   # Change the indicator values
-  if(!indicator %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+  if(!indicator %chin% c("PG", 
+                         #"Mean_b40", 
+                         "Mean", "Inequality")){
     
     indicator <- switch(
       indicator, 
       "Prosperity Gap"   = "PG", 
-      "Mean - Bottom 40" = "Mean_b40", 
+      #"Mean - Bottom 40" = "Mean_b40", 
       "Mean"             = "Mean", 
       "Inequality"       = "Inequality"
     )
@@ -654,7 +656,7 @@ conditionalPanel(
             choices = c(
               "Prosperity Gap", 
               "Mean", 
-              "Mean - Bottom 40",
+              #"Mean - Bottom 40",
               "(PG) Inequality", 
               #"Growth - Prosperity Gap", 
               #"Growth - Mean", 
@@ -709,7 +711,7 @@ conditionalPanel(
             choices = c(
               "Prosperity Gap", 
               "Mean", 
-              "Mean - Bottom 40",
+              #"Mean - Bottom 40",
               "(PG) Inequality", 
               #"Growth - Prosperity Gap", 
               #"Growth - Mean", 
@@ -732,7 +734,7 @@ conditionalPanel(
   (input.indicator_trend1_regionalaggregates == 'Prosperity Gap' | 
   input.indicator_trend1_regionalaggregates == 'Mean' | 
   input.indicator_trend1_regionalaggregates == '(PG) Inequality' |
-  input.indicator_trend1_regionalaggregates == 'Mean - Bottom 40')", 
+  #input.indicator_trend1_regionalaggregates == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig1_regionalaggregates", 
               label = "Log y-axis in Figure 1:",  
               value = FALSE)
@@ -742,7 +744,7 @@ conditionalPanel(
   (input.indicator_trend1_economies == 'Prosperity Gap' | 
   input.indicator_trend1_economies == 'Mean' | 
   input.indicator_trend1_economies == '(PG) Inequality' |
-  input.indicator_trend1_economies == 'Mean - Bottom 40')", 
+  #input.indicator_trend1_economies == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig1_economies", 
               label = "Log y-axis in Figure 1:",  
               value = FALSE)
@@ -752,7 +754,7 @@ conditionalPanel(
   (input.indicator_trend1_both == 'Prosperity Gap' | 
   input.indicator_trend1_both == 'Mean' | 
   input.indicator_trend1_both == '(PG) Inequality' |
-  input.indicator_trend1_both == 'Mean - Bottom 40')", 
+  #input.indicator_trend1_both == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig1_both", 
               label = "Log y-axis in Figure 1:",  
               value = FALSE)
@@ -764,7 +766,7 @@ conditionalPanel(
   (input.indicator_trend2_regionalaggregates == 'Prosperity Gap' | 
   input.indicator_trend2_regionalaggregates == 'Mean' | 
   input.indicator_trend2_regionalaggregates == '(PG) Inequality' |
-  input.indicator_trend2_regionalaggregates == 'Mean - Bottom 40')", 
+  #input.indicator_trend2_regionalaggregates == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig2_regionalaggregates", 
               label = "Log y-axis in Figure 2:",  
               value = FALSE)
@@ -774,7 +776,7 @@ conditionalPanel(
   (input.indicator_trend2_economies == 'Prosperity Gap' | 
   input.indicator_trend2_economies == 'Mean' | 
   input.indicator_trend2_economies == '(PG) Inequality' |
-  input.indicator_trend2_economies == 'Mean - Bottom 40')", 
+  #input.indicator_trend2_economies == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig2_economies", 
               label = "Log y-axis in Figure 2:",  
               value = FALSE)
@@ -784,7 +786,7 @@ conditionalPanel(
   (input.indicator_trend2_both == 'Prosperity Gap' | 
   input.indicator_trend2_both == 'Mean' | 
   input.indicator_trend2_both == '(PG) Inequality' |
-  input.indicator_trend2_both == 'Mean - Bottom 40')", 
+  #input.indicator_trend2_both == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig2_both", 
               label = "Log y-axis in Figure 2:",  
               value = FALSE)
@@ -863,16 +865,18 @@ dt_trend_plot1 <- reactive({
   if(input$plot_which_trend == "Regional aggregates"){
     
     indicator_trend1 <- input$indicator_trend1_regionalaggregates
-    if(!indicator_trend1 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if(!indicator_trend1 %chin% c("PG",
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")){
     indicator_trend1 <- switch(
       indicator_trend1,
       "Prosperity Gap"           = "PG",
-      "Mean - Bottom 40"         = "Mean_b40",
+      #"Mean - Bottom 40"         = "Mean_b40",
       "Mean"                     = "Mean",
       "(PG) Inequality"          = "Inequality", 
       "Growth - Prosperity Gap"  = "PG_growth", 
       "Growth - Mean"            = "Mean_growth" , 
-      "Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
+      #"Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
       "Growth - (PG) Inequality" = "Inequality_growth"
     )
     }
@@ -918,16 +922,18 @@ dt_trend_plot1 <- reactive({
   if(input$plot_which_trend == "Selected economies"){
     
     indicator_trend1 <- input$indicator_trend1_economies
-    if(!indicator_trend1 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if(!indicator_trend1 %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")){
     indicator_trend1 <- switch(
       indicator_trend1,
       "Prosperity Gap"            = "PG",
-      "Mean - Bottom 40"          = "Mean_b40",
+      #"Mean - Bottom 40"          = "Mean_b40",
       "Mean"                      = "Mean",
       "(PG) Inequality"           = "Inequality", 
       "Growth - Prosperity Gap"   = "PG_growth", 
       "Growth - Mean"             = "Mean_growth" , 
-      "Growth - Mean Bottom 40"   = "Mean_b40_growth" , 
+      #"Growth - Mean Bottom 40"   = "Mean_b40_growth" , 
       "Growth - (PG) Inequality"  = "Inequality_growth", 
       "Poverty headcount - $2.15" = "Headcount215", 
       "Poverty headcount - $3.65" = "Headcount365", 
@@ -978,16 +984,18 @@ dt_trend_plot1 <- reactive({
   if(input$plot_which_trend == "Both"){
         
     indicator_trend1 <- input$indicator_trend1_both
-    if(!indicator_trend1 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if(!indicator_trend1 %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")){
     indicator_trend1 <- switch(
       indicator_trend1,
       "Prosperity Gap"           = "PG",
-      "Mean - Bottom 40"         = "Mean_b40",
+      #"Mean - Bottom 40"         = "Mean_b40",
       "Mean"                     = "Mean",
       "(PG) Inequality"          = "Inequality", 
       "Growth - Prosperity Gap"  = "PG_growth", 
       "Growth - Mean"            = "Mean_growth" , 
-      "Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
+      #"Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
       "Growth - (PG) Inequality" = "Inequality_growth"
     )
     }
@@ -1068,16 +1076,18 @@ dt_trend_plot2 <- reactive({
   if(input$plot_which_trend == "Regional aggregates"){
     
     indicator_trend2 <- input$indicator_trend2_regionalaggregates
-    if(!indicator_trend2 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if(!indicator_trend2 %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")){
     indicator_trend2 <- switch(
       indicator_trend2,
       "Prosperity Gap"            = "PG",
-      "Mean - Bottom 40"          = "Mean_b40",
+      #"Mean - Bottom 40"          = "Mean_b40",
       "Mean"                      = "Mean",
       "(PG) Inequality"           = "Inequality", 
       "Growth - Prosperity Gap"   = "PG_growth", 
       "Growth - Mean"             = "Mean_growth" , 
-      "Growth - Mean Bottom 40"   = "Mean_b40_growth" , 
+      #"Growth - Mean Bottom 40"   = "Mean_b40_growth" , 
       "Growth - (PG) Inequality"  = "Inequality_growth"
     )
     }
@@ -1124,16 +1134,18 @@ dt_trend_plot2 <- reactive({
   if(input$plot_which_trend == "Selected economies"){
     
     indicator_trend2 <- input$indicator_trend2_economies
-    if(!indicator_trend2 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if(!indicator_trend2 %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")){
     indicator_trend2 <- switch(
       indicator_trend2,
       "Prosperity Gap"            = "PG",
-      "Mean - Bottom 40"          = "Mean_b40",
+     # "Mean - Bottom 40"          = "Mean_b40",
       "Mean"                      = "Mean",
       "(PG) Inequality"           = "Inequality", 
       "Growth - Prosperity Gap"   = "PG_growth", 
       "Growth - Mean"             = "Mean_growth" , 
-      "Growth - Mean Bottom 40"   = "Mean_b40_growth" , 
+      #"Growth - Mean Bottom 40"   = "Mean_b40_growth" , 
       "Growth - (PG) Inequality"  = "Inequality_growth", 
       "Poverty headcount - $2.15" = "Headcount215", 
       "Poverty headcount - $3.65" = "Headcount365", 
@@ -1190,16 +1202,18 @@ dt_trend_plot2 <- reactive({
   if(input$plot_which_trend == "Both"){
         
     indicator_trend2 <- input$indicator_trend2_both
-    if(!indicator_trend2 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if(!indicator_trend2 %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")){
     indicator_trend2 <- switch(
       indicator_trend2,
       "Prosperity Gap"           = "PG",
-      "Mean - Bottom 40"         = "Mean_b40",
+      #"Mean - Bottom 40"         = "Mean_b40",
       "Mean"                     = "Mean",
       "(PG) Inequality"          = "Inequality", 
       "Growth - Prosperity Gap"  = "PG_growth", 
       "Growth - Mean"            = "Mean_growth" , 
-      "Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
+      #"Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
       "Growth - (PG) Inequality" = "Inequality_growth"
     )
     }
@@ -2277,7 +2291,7 @@ conditionalPanel(
     choices  = c(
       "Prosperity Gap", 
       "Mean", 
-      "Mean - Bottom 40",
+      #"Mean - Bottom 40",
       "(PG) Inequality"
     ), 
     selected = "Prosperity Gap", 
@@ -2372,7 +2386,9 @@ dt_use <- reactive({
     
     # indicator ---------------------------------
     indicator_change <- input$indicator_region_change
-    if(!indicator_change %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if(!indicator_change %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")){
     indicator_change <- switch(
       indicator_change,
       "Prosperity Gap"   = "PG",
@@ -2520,12 +2536,14 @@ renderPlotly({
     
     # indicator ---------------------------------
     indicator_change <- input$indicator_country_change
-    if(!indicator_change %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if(!indicator_change %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")){
     indicator_change <- switch(
       indicator_change,
       "Prosperity Gap"   = "PG",
       "Mean"             = "Mean",
-      "Mean - Bottom 40" = "Mean_b40",
+      #"Mean - Bottom 40" = "Mean_b40",
       "(PG) Inequality"       = "Inequality"
     )
     }
@@ -2534,7 +2552,9 @@ renderPlotly({
     
     # indicator ---------------------------------
     indicator_change <- input$indicator_region_change
-    if(!indicator_change %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if(!indicator_change %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")){
     indicator_change <- switch(
       indicator_change,
       "Prosperity Gap"   = "PG",
@@ -2729,7 +2749,7 @@ selectInput("ineq_indicatorX",
             choices = c(
               "Prosperity Gap",
               "Mean", 
-              "Mean - Bottom 40", 
+              #"Mean - Bottom 40", 
               "(PG) Inequality"
             ),
             selected = "Mean")
@@ -2739,7 +2759,7 @@ selectInput("ineq_indicatorY",
             choices = c(
               "Prosperity Gap",
               "Mean", 
-              "Mean - Bottom 40", 
+              #"Mean - Bottom 40", 
               "(PG) Inequality"
             ),
             selected = "Prosperity Gap")
@@ -2946,23 +2966,27 @@ dt_use_sp <- reactive({
   # Change names of selected indicators
     # Change the indicator values
   ineq_indic_X <- input$ineq_indicatorX
-  if(!ineq_indic_X %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+  if(!ineq_indic_X %chin% c("PG", 
+                            #"Mean_b40", 
+                            "Mean", "Inequality")){
 
     ineq_indic_X <- switch(
       ineq_indic_X,
       "Prosperity Gap"   = "PG",
-      "Mean - Bottom 40" = "Mean_b40",
+      #"Mean - Bottom 40" = "Mean_b40",
       "Mean"             = "Mean",
       "(PG) Inequality"       = "Inequality"
     )
   }
   ineq_indic_Y <- input$ineq_indicatorY
-  if(!ineq_indic_Y %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+  if(!ineq_indic_Y %chin% c("PG", 
+                            #"Mean_b40", 
+                            "Mean", "Inequality")){
 
     ineq_indic_Y <- switch(
       ineq_indic_Y,
       "Prosperity Gap"   = "PG",
-      "Mean - Bottom 40" = "Mean_b40",
+      #"Mean - Bottom 40" = "Mean_b40",
       "Mean"             = "Mean",
       "(PG) Inequality"       = "Inequality"
     )
@@ -3341,7 +3365,7 @@ conditionalPanel(
             choices = c(
               "Prosperity Gap",
               "Mean", 
-              "Mean - Bottom 40", 
+              #"Mean - Bottom 40", 
               "(PG) Inequality"
             ),
             selected =  c(
@@ -3472,7 +3496,7 @@ ineq_indicators <- "Prosperity Gap"
 dt_indicators[, ineq_indicators := switch(
   ineq_indicators,
   "Prosperity Gap"        = "PG",
-  "Mean - Bottom 40"      = "Mean_b40",
+  #"Mean - Bottom 40"      = "Mean_b40",
   "Mean"                  = "Mean",
   "(PG) Inequality"       = "Inequality"
 ), by = ineq_indicators]
@@ -3557,7 +3581,7 @@ ineq_indicators <- dt_indicators$ineq_indicators
   dt_indicators[, ineq_indicators := switch(
     ineq_indicators,
     "Prosperity Gap"        = "PG",
-    "Mean - Bottom 40"      = "Mean_b40",
+    #"Mean - Bottom 40"      = "Mean_b40",
     "Mean"                  = "Mean",
     "(PG) Inequality"       = "Inequality"
   ), by = ineq_indicators]
