@@ -69,22 +69,22 @@ library("collapse")
 
 ```{r data-import, include=FALSE}
 
-url_data <- "https://github.com/PIP-Technical-Team/prosperity_gap_data/"
+url_data     <- "https://github.com/PIP-Technical-Team/prosperity_gap_data/"
 url_raw_file <- "https://raw.githubusercontent.com/PIP-Technical-Team/prosperity_gap_data/main/"
-my_token <- Sys.getenv("GITHUB_PAT")
+my_token     <- Sys.getenv("GITHUB_PAT")
 
 read_data <- function(file, 
                       url = url_raw_file, #usr_name, 
                       token, 
-                      fst = FALSE, 
-                      csv = TRUE) {
+                      fst = TRUE, 
+                      csv = FALSE) {
   
   url <- paste0(url, file)
   response  <- httr::GET(url, 
                          httr::authenticate("x-access-token", 
                                             token, 
                                             type = "basic"))
-  temp_file <- tempfile(fileext = ".csv")
+  temp_file <- tempfile(fileext = ".fst")
   writeBin(httr::content(response, 
                          as = "raw"), 
            temp_file)
@@ -103,17 +103,40 @@ read_data <- function(file,
 }
 
 # List of CSV files to be read
-csv_files <- paste0("PIPinput_", 
-                    c("lineup", "region", "survey"),
-                    ".csv")
+fst_files <- c(paste0("dt_", 
+                    c("lineup", "region", "country", "imputed"),
+                    ".fst"), 
+               "headcounts_lineup.fst",
+               "headcounts_survey.fst",
+               "countries_lookup.fst"
+               )
 
 # Apply the function to each CSV file
-data_list <- lapply(csv_files, function(file_name) {
+data_list <- lapply(fst_files, function(file_name) {
   read_data(url = url_raw_file, file_name, token = my_token)
 })
 
-names(data_list) <- c("lineup", "region", "survey")
+names(data_list) <- c("lineup", "region", "country", 
+                      "imputed", "hc_lineups", "hc_survey", "countries_lookup")
 
+# DATA OBJECTS ####
+dt_country          <- data_list$country
+
+dt_region           <- data_list$region
+
+
+dt_lineup           <- data_list$lineup
+
+countries_lookup    <- data_list$countries_lookup
+
+
+dt_headcount_survey <- data_list$hc_survey
+
+
+dt_headcount_lineup <- data_list$hc_lineups
+
+
+dt_imputed          <- data_list$imputed
 
 ```
 
@@ -121,50 +144,51 @@ names(data_list) <- c("lineup", "region", "survey")
 ```{r data-prep, include=FALSE}
 # DATA  ----
 
-# Upload objects ----------------------------------------------------------------
-dt_country <- readRDS(
-  file   = here::here(
-    "data", 
-    "dt_country.rds"
-  ) 
-)
-dt_region <- readRDS(
-  file   = here::here(
-    "data", 
-    "dt_region.rds"
-  ) 
-)
-dt_lineup <- readRDS(
-  file   = here::here(
-    "data", 
-    "dt_lineup.rds"
-  ) 
-)
-countries_lookup <- readRDS(
-  file   = here::here(
-    "data", 
-    "countries_lookup.rds"
-  ) 
-)
-# headcount data
-dt_headcount_survey <- readRDS(
-  file = here::here(
-    "data", 
-    "headcounts_survey.rds"
-  )
-)
-dt_headcount_lineup <- readRDS(
-  file = here::here(
-    "data", 
-    "headcounts_lineup.rds"
-  )
-)
-dt_imputed <- readRDS(
-  file = here::here(
-    "data", 
-    "dt_imputed.rds"
-  )
-)
+# # Upload objects ----------------------------------------------------------------
+# dt_country <- readRDS(
+#   file   = here::here(
+#     "data", 
+#     "dt_country.rds"
+#   ) 
+# )
+# dt_region <- readRDS(
+#   file   = here::here(
+#     "data", 
+#     "dt_region.rds"
+#   ) 
+# )
+# dt_lineup <- readRDS(
+#   file   = here::here(
+#     "data", 
+#     "dt_lineup.rds"
+#   ) 
+# )
+# countries_lookup <- readRDS(
+#   file   = here::here(
+#     "data", 
+#     "countries_lookup.rds"
+#   ) 
+# )
+# # headcount data
+# dt_headcount_survey <- readRDS(
+#   file = here::here(
+#     "data", 
+#     "headcounts_survey.rds"
+#   )
+# )
+# dt_headcount_lineup <- readRDS(
+#   file = here::here(
+#     "data", 
+#     "headcounts_lineup.rds"
+#   )
+# )
+# dt_imputed <- readRDS(
+#   file = here::here(
+#     "data", 
+#     "dt_imputed.rds"
+#   )
+# )
+
 ```
 
 
@@ -175,13 +199,13 @@ source_text <- paste("Kraay ⓡ al. (2023) updated based on Poverty and Inequali
 title_function <- function(ind){
   
   title_lookup <- c("Mean", 
-                    "Mean_b40", 
+                    #"Mean_b40", 
                     "PG", 
                     "Inequality", 
                     "PG_growth", 
                     "Inequality_growth", 
                     "Mean_growth", 
-                    "Mean_b40_growth", 
+                    #"Mean_b40_growth", 
                     "Headcount215",
                     "Headcount365",
                     "Headcount685"
@@ -189,12 +213,12 @@ title_function <- function(ind){
   
   title_use_vec <- c(
     "Mean (daily per capita, 2017 $PPP)", 
-    "Mean of bottom 40 (daily pc, 2017 $PPP)",
+    #"Mean of bottom 40 (daily pc, 2017 $PPP)",
     "Prosperity Gap", 
     "(PG) Inequality", 
     "Growth in Prosperity Gap", 
     "Growth in Mean (daily p.c., 2017 $PPP)", 
-    "Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
+    #"Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
     "Growth in (PG) Inequality", 
     "Poverty headcount - $2.15 daily p.c.",
     "Poverty headcount - $3.65 daily p.c.", 
