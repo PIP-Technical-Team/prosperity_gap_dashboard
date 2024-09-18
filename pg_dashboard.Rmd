@@ -2244,7 +2244,7 @@ output$DownloadButtonBarchart <- downloadHandler(
 </p>
 
 
-Time Change
+Change
 ===========================================================
 
 
