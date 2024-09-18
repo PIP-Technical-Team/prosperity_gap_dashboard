@@ -417,11 +417,12 @@ create_data_imputed_by_countries_two_years_pg <- function(
     dt2, 
     keep = "inner", 
     match_type = "1:1", 
-    by = c("Country_name", "Survey_comparability")
+    by = c("Country_name", "Survey_comparability"),
+    reportvar = FALSE
   )
   
   # Find the change in indicator
-  dt_use[, report:=NULL]
+  #dt_use[, report:=NULL]
   dt_use[, Change := Indicator2-Indicator1]
   dt_use[, ChangeColor := ifelse(Change>0, "Increase", "Decrease")]
   dt_use[
@@ -2243,7 +2244,7 @@ output$DownloadButtonBarchart <- downloadHandler(
 </p>
 
 
-Change over Time
+Time Change
 ===========================================================
 
 
@@ -2348,18 +2349,18 @@ conditionalPanel(
 
 
 conditionalPanel(
-  condition = "input.plot_which_change == 'Countries'", 
+  condition = "input.plot_which_change == 'Countries'",
   selectInput(
-  "do_not_plot", 
-  label    = "Remove from plot:", 
+  "do_not_plot",
+  label    = "Remove from plot:",
   choices  = c(
-    countries_lookup$Region_name |> 
-      sort() |> 
-      unique(), 
-    countries_lookup$Country_name |> 
-      sort() |> 
+    countries_lookup$Region_name |>
+      sort() |>
+      unique(),
+    countries_lookup$Country_name |>
+      sort() |>
       unique()
-  ), 
+  ),
   selected = NULL,
   multiple = TRUE
 )
@@ -2429,8 +2430,9 @@ dt_use <- reactive({
     dt_use <- joyn::merge(
       x     = dt_1, 
       y     = dt_2, 
-      yvars = T, 
-      by    = "Region_name"
+      y_vars_to_keep = T, 
+      by    = "Region_name",
+      reportvar = FALSE
     )
     
     # Create vars -------------------------------
@@ -2454,10 +2456,10 @@ dt_use <- reactive({
         AnnualizedChange = round(Change/ChangeYears, 2)
       )
     ]
-    dt_use[
-      ,
-      report := NULL
-    ]
+    # dt_use[
+    #   ,
+    #   report := NULL
+    # ]
 
 
     dt_use[, ChangeColor := ifelse(Change>0, "Increase", "Decrease")]
@@ -2497,6 +2499,8 @@ dt_use <- reactive({
     !(Country_name %chin% deselected_countries)
   ]
   # dt_use
+  dt_use <- dt_use[, !("Region_name.y")]  # Remove Region_name.y
+setnames(dt_use, "Region_name.x", "Region_name")  # Rename Region_name.x to Region_name
   # Filter years ----
   dt_use <- dt_use[
     Year == as.numeric(input$initial_year_country_change) | Year == (as.numeric(input$initial_year_country_change) + as.numeric(input$interval_change))
@@ -2734,7 +2738,7 @@ Column {.tabset data-width=200}
 
 
 
-Scatterplot of Indicators
+Scatterplot 
 ===========================================================
 
 
@@ -3319,7 +3323,7 @@ output$DownloadButtonScatterplot <- downloadHandler(
 
 
 
-Table of Indicators
+Indicators Tab
 ===========================================================
 
 
@@ -3778,7 +3782,7 @@ output$DownloadButtonTable <- downloadHandler(
 
 
 
-About and Definitions {#tab_about}
+About/Defs {#tab_about}
 ===========================================================
 
 Column {.tabset}
