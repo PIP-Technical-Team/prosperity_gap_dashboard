@@ -71,19 +71,19 @@ library("collapse")
 
 url_data     <- "https://github.com/PIP-Technical-Team/prosperity_gap_data/"
 url_raw_file <- "https://raw.githubusercontent.com/PIP-Technical-Team/prosperity_gap_data/main/"
-my_token     <- Sys.getenv("GITHUB_PAT")
+#my_token     <- Sys.getenv("GITHUB_PAT")
 
 read_data <- function(file, 
                       url = url_raw_file, #usr_name, 
-                      token, 
+                     # token, 
                       fst = TRUE, 
                       csv = FALSE) {
   
   url <- paste0(url, file)
-  response  <- httr::GET(url, 
-                         httr::authenticate("x-access-token", 
-                                            token, 
-                                            type = "basic"))
+  response  <- httr::GET(url)#, 
+                         #httr::authenticate("x-access-token", 
+                        #                   # token, 
+                         #                   type = "basic"))
   temp_file <- tempfile(fileext = ".fst")
   writeBin(httr::content(response, 
                          as = "raw"), 
@@ -113,7 +113,7 @@ fst_files <- c(paste0("dt_",
 
 # Apply the function to each CSV file
 data_list <- lapply(fst_files, function(file_name) {
-  read_data(url = url_raw_file, file_name, token = my_token)
+  read_data(url = url_raw_file, file_name)#, token = my_token)
 })
 
 names(data_list) <- c("lineup", "region", "country", 
