@@ -3782,7 +3782,7 @@ output$DownloadButtonTable <- downloadHandler(
 
 
 
-About/Defs {#tab_about}
+About {#tab_about}
 ===========================================================
 
 Column {.tabset}
