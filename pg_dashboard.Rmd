@@ -124,7 +124,7 @@ dt_lineup           <- data_list$lineup |>
 countries_lookup    <- data_list$countries_lookup
 dt_headcount_survey <- data_list$hc_survey 
 dt_headcount_lineup <- data_list$hc_lineups
-dt_imputed          <- pipr::get_stats()#data_list$imputed
+dt_imputed          <- data_list$imputed
 
 dt_headcount_survey <- left_join(x = dt_headcount_survey, 
                                  y = dt_country |> 
@@ -312,14 +312,7 @@ title_function_y <- function(ind){
   return(use_title)
   
 }
-              
-
-# Add Download button
-downloadButtonRmd <- function (outputId, label = "Download", class = NULL, ...)  {
-     tags$a(id = outputId, class = paste("btn btn-default shiny-download-link", 
-        class), href = "", target = "_blank", download = NA, 
-        icon("download"), label, ...)
- }
+         
 
 # create_data_imputed_by_countries_two_years_pg(dt = dt_country, countries_selected = countries_selected, year1_selected = 1998, year2_selected = 2005, indicator = indicator)
 create_data_imputed_by_countries_two_years_pg <- function(
@@ -1914,13 +1907,6 @@ conditionalPanel(
               multiple = TRUE)
 )
 
-# Render download button
-#downloadButton("downloadData", "Download CSV")
-
-downloadButtonRmd(
-  outputId = "DownloadButtonBarchart", 
-  label = "CSV"
-)
 
 
 ```
@@ -2208,17 +2194,6 @@ if(input$level_or_growth_decomposition == "Level"){
 
 
 
-output$DownloadButtonBarchart <- downloadHandler(
-  filename = function() {
-    paste("prosperity-gap-decomposition", Sys.Date(), ".csv", sep = "")
-  },
-  content = function(file) {
-    write.csv(
-      dt_barchart()
-      , file)
-  }
-)
-
 
 
 ```
@@ -2264,7 +2239,7 @@ selectInput("plot_which_change",
 
 ## Select Indicator
 conditionalPanel(
-  condition = "input.plot_which_change == 'Regional aggregates'", 
+  condition = 'input.plot_which_change == "Regional aggregates" ', 
   selectInput(
     "indicator_region_change", 
     label    = "Select indicator:", 
@@ -2278,14 +2253,13 @@ conditionalPanel(
   )
 )
 conditionalPanel(
-  condition = "input.plot_which_change == 'Countries'", 
+  condition = 'input.plot_which_change == "Countries"', 
   selectInput(
     "indicator_country_change", 
     label    = "Select indicator:", 
     choices  = c(
       "Prosperity Gap", 
       "Mean", 
-      #"Mean - Bottom 40",
       "(PG) Inequality"
     ), 
     selected = "Prosperity Gap", 
@@ -2298,7 +2272,7 @@ conditionalPanel(
 
 ## Select initial year
 conditionalPanel(
-  condition  = "input.plot_which_change == 'Regional aggregates'", 
+  condition  = "input.plot_which_change = 'Regional aggregates'", 
   selectInput(
     "initial_year_region_change",
     label    = "Initial year:",
@@ -2310,7 +2284,7 @@ conditionalPanel(
   )
 )
 conditionalPanel(
-  condition  = "input.plot_which_change == 'Countries'", 
+  condition  = "input.plot_which_change = 'Countries'", 
   selectInput(
     "initial_year_country_change", 
     label    = "Initial year:",
@@ -2359,10 +2333,6 @@ conditionalPanel(
 )
 )
 
-downloadButtonRmd(
-  outputId = "DownloadButtonChange", 
-  label = "csv"
-)
 
 ```
 
@@ -2467,7 +2437,7 @@ dt_use <- reactive({
     dt_use[, Region_name := factor(Region_name, levels = Region_name[order(Indicator1)])]
 
     
-  } else if( input$plot_which_change == "Countries"){
+  } else if (input$plot_which_change == "Countries"){
     # indicator ---------------------------------
     if(input$indicator_country_change == "(PG) Inequality"){
       indicator <- "Inequality"
@@ -2687,19 +2657,6 @@ pp
 })
 
 
-
-output$DownloadButtonChange <- downloadHandler(
-  filename = function() {
-    paste("prosperity-gap-change", Sys.Date(), ".csv", sep = "")
-  },
-  content = function(file) {
-    write.csv(
-      dt_use()
-      , file)
-  }
-)
-
-
 ```
 
 
@@ -2859,11 +2816,6 @@ checkboxInput("add_line",
               label = "Add fitted line:", 
               value = FALSE)
 
-
-downloadButtonRmd(
-  outputId = "DownloadButtonScatterplot",
-  label = "CSV"
-)
 
 ```
 
@@ -3286,16 +3238,6 @@ sp1_plotly
 
 
 
-output$DownloadButtonScatterplot <- downloadHandler(
-  filename = function() {
-    paste("prosperity-gap-scatterplot", Sys.Date(), ".csv", sep = "")
-  },
-  content = function(file) {
-    write.csv(
-      dt_country
-      , file)
-  }
-)
 
 
 
@@ -3441,15 +3383,6 @@ observeEvent(input$select_initial_year_table,
                  selected = dt_country$Year |> max() 
                )
 })
-
-
-# Render download button
-#downloadButton("downloadData", "Download CSV")
-
-downloadButtonRmd(
-  outputId = "DownloadButtonTable", 
-  label = "CSV"
-)
 
 
 
@@ -3758,16 +3691,6 @@ t <- layout(
                    ))
 
 })
-
-
-output$DownloadButtonTable <- downloadHandler(
-  filename = function() {
-    paste("prosperity-gap-table", Sys.Date(), ".csv", sep = "")
-  },
-  content = function(file) {
-    write.csv(table(), file)
-  }
-)
 
 
 
