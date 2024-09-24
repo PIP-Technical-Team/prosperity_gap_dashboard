@@ -1,5 +1,5 @@
 ---
-title: "Prosperity Gap Dashboard"
+title: "Prosperity Gap"
 output:
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -67,71 +67,102 @@ library("zoo")
 library("collapse")
 ```
 
+```{r data-import, include=FALSE}
 
-```{r data-prep, include=FALSE}
-# DATA  ----
+url_data     <- "https://github.com/PIP-Technical-Team/prosperity_gap_data/"
+url_raw_file <- "https://raw.githubusercontent.com/PIP-Technical-Team/prosperity_gap_data/main/"
+#my_token     <- Sys.getenv("GITHUB_PAT")
 
-# Upload objects ----------------------------------------------------------------
-dt_country <- readRDS(
-  file   = here::here(
-    "data", 
-    "dt_country.rds"
-  ) 
-)
-dt_region <- readRDS(
-  file   = here::here(
-    "data", 
-    "dt_region.rds"
-  ) 
-)
-dt_lineup <- readRDS(
-  file   = here::here(
-    "data", 
-    "dt_lineup.rds"
-  ) 
-)
-countries_lookup <- readRDS(
-  file   = here::here(
-    "data", 
-    "countries_lookup.rds"
-  ) 
-)
-# headcount data
-dt_headcount_survey <- readRDS(
-  file = here::here(
-    "data", 
-    "headcounts_survey.rds"
-  )
-)
-dt_headcount_lineup <- readRDS(
-  file = here::here(
-    "data", 
-    "headcounts_lineup.rds"
-  )
-)
-dt_imputed <- readRDS(
-  file = here::here(
-    "data", 
-    "dt_imputed.rds"
-  )
-)
+read_data <- function(file, 
+                      url = url_raw_file, #usr_name, 
+                     # token, 
+                      fst = TRUE, 
+                      csv = FALSE) {
+  
+  url <- paste0(url, file)
+  response  <- httr::GET(url)
+  temp_file <- tempfile(fileext = ".fst")
+  writeBin(httr::content(response, 
+                         as = "raw"), 
+           temp_file)
+  if (fst) {
+    data <- fst::read_fst(temp_file,
+                          as.data.table = TRUE)
+  } else if (csv) {
+    data <- fread(temp_file,
+                  check.names = TRUE)
+  } else {
+    data <- readxl::read_excel(temp_file)
+  }
+  unlink(temp_file)
+  
+  data
+}
+
+# List of CSV files to be read
+fst_files <- c(paste0("dt_", 
+                    c("lineup", "region", "country", "imputed"),
+                    ".fst"), 
+               "headcounts_lineup.fst",
+               "headcounts_survey.fst",
+               "countries_lookup.fst"
+               )
+
+# Apply the function to each CSV file
+data_list <- lapply(fst_files, function(file_name) {
+  read_data(url = url_raw_file, file_name)#, token = my_token)
+})
+
+names(data_list) <- c("lineup", "region", "country", 
+                      "imputed", "hc_lineups", "hc_survey", "countries_lookup")
+
+# DATA OBJECTS ####
+dt_country          <- data_list$country
+dt_region           <- data_list$region
+dt_lineup           <- data_list$lineup |> 
+  fmutate(Survey_comparability = paste0(Reporting_level, Welfare_type))
+countries_lookup    <- data_list$countries_lookup
+dt_headcount_survey <- data_list$hc_survey 
+dt_headcount_lineup <- data_list$hc_lineups
+dt_imputed          <- data_list$imputed
+
+dt_headcount_survey <- left_join(x = dt_headcount_survey, 
+                                 y = dt_country |> 
+                                   fselect(Country_code, 
+                                           Year, 
+                                           Welfare_type, 
+                                           Reporting_level), 
+                                 by = c("Country_code", "Year"), 
+                                 reportvar = FALSE)
+dt_headcount_lineup <- left_join(x = dt_headcount_lineup,
+                                 y = pipr::get_stats(fill_gaps = T) |> 
+                                   frename(country_code    = Country_code,
+                                           year            = Year,
+                                           welfare_type    = Welfare_type,
+                                           reporting_level = Reporting_level) |> 
+                                   fselect(Country_code, Year, Welfare_type, Reporting_level) |> 
+                                   fsubset(!(Country_code %in% c("IND", "CHN") & !Reporting_level == "national")),
+                                 by = c("Country_code", "Year"),
+                                 reportvar = FALSE) |> 
+  fmutate(Survey_comparability = paste0(Reporting_level, Welfare_type))
+
 ```
 
 
 ```{r load-functions, include=FALSE}
 # Source text to include on plots
-source_text <- paste("Kraay ⓡ al. (2023) updated based on Poverty and Inequality Platform (version 20230919_2017)")
+source_text <- paste("Kraay ⓡ al. (2023) updated based on Poverty and Inequality Platform (version 20240919_2017)")
 
 title_function <- function(ind){
   
   title_lookup <- c("Mean", 
-                    "Mean_b40", 
+                    #"Mean_b40", 
                     "PG", 
                     "Inequality", 
                     "PG_growth", 
                     "Inequality_growth", 
                     "Mean_growth", 
-                    "Mean_b40_growth", 
+                    #"Mean_b40_growth", 
                     "Headcount215",
                     "Headcount365",
                     "Headcount685"
@@ -139,12 +170,12 @@ title_function <- function(ind){
   
   title_use_vec <- c(
     "Mean (daily per capita, 2017 $PPP)", 
-    "Mean of bottom 40 (daily pc, 2017 $PPP)",
+    #"Mean of bottom 40 (daily pc, 2017 $PPP)",
     "Prosperity Gap", 
     "(PG) Inequality", 
     "Growth in Prosperity Gap", 
     "Growth in Mean (daily p.c., 2017 $PPP)", 
-    "Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
+    #"Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
     "Growth in (PG) Inequality", 
     "Poverty headcount - $2.15 daily p.c.",
     "Poverty headcount - $3.65 daily p.c.", 
@@ -166,11 +197,11 @@ title_function2 <- function(ind){
   title_lookup <- c(
     "Prosperity Gap",
     "Mean", 
-    "Mean - Bottom 40", 
+    #"Mean - Bottom 40", 
     "(PG) Inequality", 
     "Growth - Prosperity Gap", 
     "Growth - Mean", 
-    "Growth - Mean Bottom 40",
+    #"Growth - Mean Bottom 40",
     "Growth - (PG) Inequality", 
     "Poverty headcount - $2.15",
     "Poverty headcount - $3.65",
@@ -180,11 +211,11 @@ title_function2 <- function(ind){
   title_use_vec <- c(
     "Prosperity Gap",
     "Mean (daily p.c., 2017 $PPP)", 
-    "Mean of bottom 40 (daily p.c.)", 
+    #"Mean of bottom 40 (daily p.c.)", 
     "(PG) Inequality", 
     "Growth in Prosperity Gap", 
     "Growth in Mean (daily pc, 2017 $PPP)", 
-    "Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
+    #"Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
     "Growth in (PG) Inequality", 
     "Poverty headcount - $2.15 (daily p.c.)",
     "Poverty headcount - $3.65 (daily p.c.)", 
@@ -206,11 +237,11 @@ title_function_y_2 <- function(ind){
   title_lookup <- c(
     "Prosperity Gap",
     "Mean", 
-    "Mean - Bottom 40", 
+    #"Mean - Bottom 40", 
     "(PG) Inequality", 
     "Growth - Prosperity Gap", 
     "Growth - Mean", 
-    "Growth - Mean Bottom 40",
+    #"Growth - Mean Bottom 40",
     "Growth - (PG) Inequality", 
     "Poverty headcount - $2.15",
     "Poverty headcount - $3.65",
@@ -220,11 +251,11 @@ title_function_y_2 <- function(ind){
   title_use_vec <- c(
     "Prosperity Gap \n (Lower values correspond to better outcomes)",
     "Mean (daily p.c., 2017 $PPP)", 
-    "Mean of bottom 40 (daily p.c.)", 
+    #"Mean of bottom 40 (daily p.c.)", 
     "(PG) Inequality", 
     "Growth in Prosperity Gap", 
     "Growth in Mean (daily pc, 2017 $PPP)", 
-    "Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
+    #"Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
     "Growth in (PG) Inequality", 
     "Poverty headcount - $2.15 (daily p.c.)",
     "Poverty headcount - $3.65 (daily p.c.)", 
@@ -246,13 +277,13 @@ title_function_y_2 <- function(ind){
 title_function_y <- function(ind){
   
   title_lookup <- c("Mean", 
-                    "Mean_b40", 
+                    #"Mean_b40", 
                     "PG", 
                     "Inequality", 
                     "PG_growth", 
                     "Inequality_growth", 
                     "Mean_growth", 
-                    "Mean_b40_growth", 
+                    #"Mean_b40_growth", 
                     "Headcount215",
                     "Headcount365",
                     "Headcount685"
@@ -260,12 +291,12 @@ title_function_y <- function(ind){
   
   title_use_vec <- c(
     "Mean (daily per capita, 2017 $PPP)", 
-    "Mean of bottom 40 (daily pc, 2017 $PPP)",
+    #"Mean of bottom 40 (daily pc, 2017 $PPP)",
     "Prosperity Gap \n (Lower values correspond to better outcomes)", 
     "(PG) Inequality", 
     "Growth in Prosperity Gap", 
     "Growth in Mean (daily p.c., 2017 $PPP)", 
-    "Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
+    #"Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
     "Growth in (PG) Inequality", 
     "Poverty headcount - $2.15 daily p.c.",
     "Poverty headcount - $3.65 daily p.c.", 
@@ -281,14 +312,7 @@ title_function_y <- function(ind){
   return(use_title)
   
 }
-              
-
-# Add Download button
-downloadButtonRmd <- function (outputId, label = "Download", class = NULL, ...)  {
-     tags$a(id = outputId, class = paste("btn btn-default shiny-download-link", 
-        class), href = "", target = "_blank", download = NA, 
-        icon("download"), label, ...)
- }
+         
 
 # create_data_imputed_by_countries_two_years_pg(dt = dt_country, countries_selected = countries_selected, year1_selected = 1998, year2_selected = 2005, indicator = indicator)
 create_data_imputed_by_countries_two_years_pg <- function(
@@ -302,12 +326,14 @@ create_data_imputed_by_countries_two_years_pg <- function(
   dt_use <- copy(dt)
   
   # Change the indicator values
-  if(!indicator %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+  if(!indicator %chin% c("PG", 
+                         #"Mean_b40", 
+                         "Mean", "Inequality")){
     
     indicator <- switch(
       indicator, 
       "Prosperity Gap"   = "PG", 
-      "Mean - Bottom 40" = "Mean_b40", 
+      #"Mean - Bottom 40" = "Mean_b40", 
       "Mean"             = "Mean", 
       "Inequality"       = "Inequality"
     )
@@ -341,11 +367,12 @@ create_data_imputed_by_countries_two_years_pg <- function(
     dt2, 
     keep = "inner", 
     match_type = "1:1", 
-    by = c("Country_name", "Survey_comparability")
+    by = c("Country_name", "Survey_comparability"),
+    reportvar = FALSE
   )
   
   # Find the change in indicator
-  dt_use[, report:=NULL]
+  #dt_use[, report:=NULL]
   dt_use[, Change := Indicator2-Indicator1]
   dt_use[, ChangeColor := ifelse(Change>0, "Increase", "Decrease")]
   dt_use[
@@ -580,7 +607,7 @@ conditionalPanel(
             choices = c(
               "Prosperity Gap", 
               "Mean", 
-              "Mean - Bottom 40",
+              #"Mean - Bottom 40",
               "(PG) Inequality", 
               #"Growth - Prosperity Gap", 
               #"Growth - Mean", 
@@ -635,7 +662,7 @@ conditionalPanel(
             choices = c(
               "Prosperity Gap", 
               "Mean", 
-              "Mean - Bottom 40",
+              #"Mean - Bottom 40",
               "(PG) Inequality", 
               #"Growth - Prosperity Gap", 
               #"Growth - Mean", 
@@ -658,7 +685,7 @@ conditionalPanel(
   (input.indicator_trend1_regionalaggregates == 'Prosperity Gap' | 
   input.indicator_trend1_regionalaggregates == 'Mean' | 
   input.indicator_trend1_regionalaggregates == '(PG) Inequality' |
-  input.indicator_trend1_regionalaggregates == 'Mean - Bottom 40')", 
+  #input.indicator_trend1_regionalaggregates == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig1_regionalaggregates", 
               label = "Log y-axis in Figure 1:",  
               value = FALSE)
@@ -668,7 +695,7 @@ conditionalPanel(
   (input.indicator_trend1_economies == 'Prosperity Gap' | 
   input.indicator_trend1_economies == 'Mean' | 
   input.indicator_trend1_economies == '(PG) Inequality' |
-  input.indicator_trend1_economies == 'Mean - Bottom 40')", 
+  #input.indicator_trend1_economies == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig1_economies", 
               label = "Log y-axis in Figure 1:",  
               value = FALSE)
@@ -678,7 +705,7 @@ conditionalPanel(
   (input.indicator_trend1_both == 'Prosperity Gap' | 
   input.indicator_trend1_both == 'Mean' | 
   input.indicator_trend1_both == '(PG) Inequality' |
-  input.indicator_trend1_both == 'Mean - Bottom 40')", 
+  #input.indicator_trend1_both == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig1_both", 
               label = "Log y-axis in Figure 1:",  
               value = FALSE)
@@ -690,7 +717,7 @@ conditionalPanel(
   (input.indicator_trend2_regionalaggregates == 'Prosperity Gap' | 
   input.indicator_trend2_regionalaggregates == 'Mean' | 
   input.indicator_trend2_regionalaggregates == '(PG) Inequality' |
-  input.indicator_trend2_regionalaggregates == 'Mean - Bottom 40')", 
+  #input.indicator_trend2_regionalaggregates == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig2_regionalaggregates", 
               label = "Log y-axis in Figure 2:",  
               value = FALSE)
@@ -700,7 +727,7 @@ conditionalPanel(
   (input.indicator_trend2_economies == 'Prosperity Gap' | 
   input.indicator_trend2_economies == 'Mean' | 
   input.indicator_trend2_economies == '(PG) Inequality' |
-  input.indicator_trend2_economies == 'Mean - Bottom 40')", 
+  #input.indicator_trend2_economies == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig2_economies", 
               label = "Log y-axis in Figure 2:",  
               value = FALSE)
@@ -710,7 +737,7 @@ conditionalPanel(
   (input.indicator_trend2_both == 'Prosperity Gap' | 
   input.indicator_trend2_both == 'Mean' | 
   input.indicator_trend2_both == '(PG) Inequality' |
-  input.indicator_trend2_both == 'Mean - Bottom 40')", 
+  #input.indicator_trend2_both == 'Mean - Bottom 40')", 
   checkboxInput("log_y_3_fig2_both", 
               label = "Log y-axis in Figure 2:",  
               value = FALSE)
@@ -784,27 +811,25 @@ observeEvent(
 
 dt_trend_plot1 <- reactive({
 
-
   # If 'Regional aggregates' -----------------------------
-  if(input$plot_which_trend == "Regional aggregates"){
+  if (input$plot_which_trend == "Regional aggregates") {
     
     indicator_trend1 <- input$indicator_trend1_regionalaggregates
-    if(!indicator_trend1 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if (!indicator_trend1 %chin% c("PG",
+                                  "Mean", 
+                                  "Inequality")) {
     indicator_trend1 <- switch(
       indicator_trend1,
       "Prosperity Gap"           = "PG",
-      "Mean - Bottom 40"         = "Mean_b40",
       "Mean"                     = "Mean",
       "(PG) Inequality"          = "Inequality", 
       "Growth - Prosperity Gap"  = "PG_growth", 
       "Growth - Mean"            = "Mean_growth" , 
-      "Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
       "Growth - (PG) Inequality" = "Inequality_growth"
     )
     }
     
     dt_trend_plot1 <- copy(dt_region)
-    #dt_trend_plot1 <- dt_trend_plot1[!Region_name == "Global"]
     dt_trend_plot1[
       Region_name == "Global", 
       PG := PG_decomp
@@ -819,15 +844,15 @@ dt_trend_plot1 <- reactive({
       ,
       text_tooltip := (
         paste0(
-          "Economy: "                     , Economy, "\n",
-          "Year: "                        , Year,
-          "\n"                            , input$indicator_trend1_regionalaggregates, ": ", round(IndicatorTrend1, 2)
+          "Economy: " , Economy, "\n",
+          "Year: " , Year, "\n" , 
+          input$indicator_trend1_regionalaggregates, ": ", round(IndicatorTrend1, 2)
         )
       )
     ]
     
     # Filter regions
-    if("All" %chin% input$select_regional_aggregates_trend){
+    if ("All" %chin% input$select_regional_aggregates_trend) {
       dt_trend_plot1
     } else {
       dt_trend_plot1 <- dt_trend_plot1[
@@ -839,36 +864,36 @@ dt_trend_plot1 <- reactive({
 
   }
   
-  
   # If 'Selected economies' ------------------------------
-  if(input$plot_which_trend == "Selected economies"){
+  if (input$plot_which_trend == "Selected economies") {
     
     indicator_trend1 <- input$indicator_trend1_economies
-    if(!indicator_trend1 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    
+    if (!indicator_trend1 %chin% c("PG", 
+                                  "Mean", 
+                                  "Inequality")) {
     indicator_trend1 <- switch(
       indicator_trend1,
       "Prosperity Gap"            = "PG",
-      "Mean - Bottom 40"          = "Mean_b40",
       "Mean"                      = "Mean",
       "(PG) Inequality"           = "Inequality", 
       "Growth - Prosperity Gap"   = "PG_growth", 
       "Growth - Mean"             = "Mean_growth" , 
-      "Growth - Mean Bottom 40"   = "Mean_b40_growth" , 
       "Growth - (PG) Inequality"  = "Inequality_growth", 
       "Poverty headcount - $2.15" = "Headcount215", 
       "Poverty headcount - $3.65" = "Headcount365", 
-      "Poverty headcount - $6.85" = "Headcount685"
-    )
+      "Poverty headcount - $6.85" = "Headcount685")
     }
     
-    if( grepl(pattern = "headcount", x = input$indicator_trend1_economies) == TRUE ){
-      if(input$lineup_or_survey_trend == "Survey"){
+    if (grepl(pattern = "headcount", x = input$indicator_trend1_economies) == TRUE ) {
+      
+      if (input$lineup_or_survey_trend == "Survey") {
         dt_trend_plot1 <- copy(dt_headcount_survey)
       } else {
         dt_trend_plot1 <- copy(dt_headcount_lineup)
       }
-    } else {
-          if(input$lineup_or_survey_trend == "Survey"){
+     } else {
+          if (input$lineup_or_survey_trend == "Survey") {
             dt_trend_plot1 <- copy(dt_country)
           } else {
             dt_trend_plot1 <- copy(dt_lineup)
@@ -885,9 +910,12 @@ dt_trend_plot1 <- reactive({
       ,
       text_tooltip := (
         paste0(
-          "Economy: "                     , Economy, "\n",
-          "Year: "                        , Year,
-          "\n"                            , input$indicator_trend1_economies, ": ", round(IndicatorTrend1, 2)
+          "Economy: ", Economy, "\n",
+          "Year: ", Year, "\n", 
+          input$indicator_trend1_economies, ": ", 
+          round(IndicatorTrend1, 2), "\n",
+          "Reporting level: ", Reporting_level, "\n", 
+          "Welfare type: ", Welfare_type
         )
       )
     ]
@@ -901,37 +929,57 @@ dt_trend_plot1 <- reactive({
   }
   
    # If 'Both' --------------------------------------------
-  if(input$plot_which_trend == "Both"){
+  if (input$plot_which_trend == "Both") {
         
     indicator_trend1 <- input$indicator_trend1_both
-    if(!indicator_trend1 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if (!indicator_trend1 %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")) {
     indicator_trend1 <- switch(
       indicator_trend1,
       "Prosperity Gap"           = "PG",
-      "Mean - Bottom 40"         = "Mean_b40",
+      #"Mean - Bottom 40"         = "Mean_b40",
       "Mean"                     = "Mean",
       "(PG) Inequality"          = "Inequality", 
       "Growth - Prosperity Gap"  = "PG_growth", 
       "Growth - Mean"            = "Mean_growth" , 
-      "Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
+      #"Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
       "Growth - (PG) Inequality" = "Inequality_growth"
     )
     }
-    if(input$lineup_or_survey_trend_interpolated == "Survey"){
-    dt_trend_c1 <- copy(dt_country)
+    if (input$lineup_or_survey_trend_interpolated == "Survey") {
+     dt_trend_c1 <- copy(dt_country)
     } else {
       dt_trend_c1 <- copy(dt_lineup)
     }
 
     dt_trend_c1 <- dt_trend_c1[
       , 
-      .(Economy=Country_name, Year, PG, Inequality, Mean, Region_code, Survey_comparability, PG_growth, Mean_growth, Inequality_growth)
+      .(Economy = Country_name, 
+        Year, 
+        PG, 
+        Inequality, 
+        Mean, 
+        Region_code, 
+        Survey_comparability, 
+        PG_growth, 
+        Mean_growth, 
+        Inequality_growth)
     ]
     dt_trend_r1 <- copy(dt_region)
     dt_trend_r1 <- dt_trend_r1[!Region_name == "Global"]
     dt_trend_r1 <- dt_trend_r1[
       , 
-      .(Economy=Region_name, Year, PG, Inequality, Mean, Region_code, Survey_comparability = 1L, PG_growth, Mean_growth, Inequality_growth)
+      .(Economy = Region_name, 
+        Year, 
+        PG, 
+        Inequality,
+        Mean, 
+        Region_code, 
+        Survey_comparability = 1L, 
+        PG_growth, 
+        Mean_growth, 
+        Inequality_growth)
     ]
     
     dt_trend_plot1 <- rbindlist(
@@ -947,7 +995,7 @@ dt_trend_plot1 <- reactive({
       new = c("IndicatorTrend1")
     )
   
-    if(grepl(pattern = "Growth", x = input$indicator_trend1_both) == TRUE){
+    if (grepl(pattern = "Growth", x = input$indicator_trend1_both) == TRUE) {
       roundto <- 3
     } else{
       roundto <- 2
@@ -956,9 +1004,9 @@ dt_trend_plot1 <- reactive({
       ,
       text_tooltip := (
         paste0(
-          "Economy: "                     , Economy, "\n",
-          "Year: "                        , Year,
-          "\n"                            , input$indicator_trend1_both, ": ", round(IndicatorTrend1, roundto)
+          "Economy: ", Economy, "\n",
+          "Year: ", Year, "\n", input$indicator_trend1_both, 
+          ": ", round(IndicatorTrend1, roundto)
         )
       )
     ]
@@ -971,7 +1019,7 @@ dt_trend_plot1 <- reactive({
     }
   
   # Filter years
-  if(input$all_years_plot_trend == "Custom"){
+  if (input$all_years_plot_trend == "Custom") {
     
     dt_trend_plot1 <- dt_trend_plot1[
       Year >= as.numeric(input$select_initial_year_trend) & Year <= as.numeric(input$select_final_year_trend)
@@ -991,19 +1039,21 @@ dt_trend_plot2 <- reactive({
 
     
   # If 'Regional aggregates' -----------------------------
-  if(input$plot_which_trend == "Regional aggregates"){
+  if (input$plot_which_trend == "Regional aggregates") {
     
     indicator_trend2 <- input$indicator_trend2_regionalaggregates
-    if(!indicator_trend2 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if (!indicator_trend2 %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")) {
     indicator_trend2 <- switch(
       indicator_trend2,
       "Prosperity Gap"            = "PG",
-      "Mean - Bottom 40"          = "Mean_b40",
+      #"Mean - Bottom 40"          = "Mean_b40",
       "Mean"                      = "Mean",
       "(PG) Inequality"           = "Inequality", 
       "Growth - Prosperity Gap"   = "PG_growth", 
       "Growth - Mean"             = "Mean_growth" , 
-      "Growth - Mean Bottom 40"   = "Mean_b40_growth" , 
+      #"Growth - Mean Bottom 40"   = "Mean_b40_growth" , 
       "Growth - (PG) Inequality"  = "Inequality_growth"
     )
     }
@@ -1016,7 +1066,7 @@ dt_trend_plot2 <- reactive({
       old = c("Region_name", indicator_trend2), 
       new = c("Economy", "IndicatorTrend2")
     )
-        if(grepl(pattern = "Growth", x = input$indicator_trend2_regionalaggregates) == TRUE){
+        if (grepl(pattern = "Growth", x = input$indicator_trend2_regionalaggregates) == TRUE) {
       roundto <- 3
     } else{
       roundto <- 2
@@ -1025,15 +1075,14 @@ dt_trend_plot2 <- reactive({
       ,
       text_tooltip := (
         paste0(
-          "Economy: "                     , Economy, "\n",
-          "Year: "                        , Year,
-          "\n"                            , input$indicator_trend2_regionalaggregates, ": ", round(IndicatorTrend2, roundto)
-        )
-      )
+          "Economy: ", Economy, "\n",
+          "Year: ", Year, "\n", 
+          input$indicator_trend2_regionalaggregates, ": ", 
+          round(IndicatorTrend2, roundto)))
     ]
     
     # Filter regions
-    if("All" %chin% input$select_regional_aggregates_trend){
+    if ("All" %chin% input$select_regional_aggregates_trend) {
       dt_trend_plot2
     } else {
       dt_trend_plot2 <- dt_trend_plot2[
@@ -1047,19 +1096,21 @@ dt_trend_plot2 <- reactive({
   
   
   # If 'Selected economies' ------------------------------
-  if(input$plot_which_trend == "Selected economies"){
+  if (input$plot_which_trend == "Selected economies") {
     
     indicator_trend2 <- input$indicator_trend2_economies
-    if(!indicator_trend2 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if (!indicator_trend2 %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")) {
     indicator_trend2 <- switch(
       indicator_trend2,
       "Prosperity Gap"            = "PG",
-      "Mean - Bottom 40"          = "Mean_b40",
+     # "Mean - Bottom 40"          = "Mean_b40",
       "Mean"                      = "Mean",
       "(PG) Inequality"           = "Inequality", 
       "Growth - Prosperity Gap"   = "PG_growth", 
       "Growth - Mean"             = "Mean_growth" , 
-      "Growth - Mean Bottom 40"   = "Mean_b40_growth" , 
+      #"Growth - Mean Bottom 40"   = "Mean_b40_growth" , 
       "Growth - (PG) Inequality"  = "Inequality_growth", 
       "Poverty headcount - $2.15" = "Headcount215", 
       "Poverty headcount - $3.65" = "Headcount365", 
@@ -1067,16 +1118,16 @@ dt_trend_plot2 <- reactive({
     )
     }
     
-    if( grepl(pattern = "headcount", x = input$indicator_trend2_economies) == TRUE ){
-      if(input$lineup_or_survey_trend == "Survey"){
+    if ( grepl(pattern = "headcount", x = input$indicator_trend2_economies) == TRUE ) {
+      if (input$lineup_or_survey_trend == "Survey") {
         dt_trend_plot2 <- copy(dt_headcount_survey)
       } else {
         dt_trend_plot2 <- copy(dt_headcount_lineup)
       }
     } else {
-          if(input$lineup_or_survey_trend == "Survey"){
+          if (input$lineup_or_survey_trend == "Survey") {
             dt_trend_plot2 <- copy(dt_country)
-          } else {
+          } else if (input$lineup_or_survey_trend == "Interpolated") {
             dt_trend_plot2 <- copy(dt_lineup)
           }
     }
@@ -1086,18 +1137,21 @@ dt_trend_plot2 <- reactive({
       old = c("Country_name", indicator_trend2), 
       new = c("Economy", "IndicatorTrend2")
     )
-      if(grepl(pattern = "Growth", x = input$indicator_trend2_economies) == TRUE){
+      if (grepl(pattern = "Growth", x = input$indicator_trend2_economies) == TRUE) {
       roundto <- 3
-    } else{
+    } else {
       roundto <- 2
     }
     dt_trend_plot2[
       ,
       text_tooltip := (
         paste0(
-          "Economy: "                     , Economy, "\n",
-          "Year: "                        , Year,
-          "\n"                            , input$indicator_trend2_economies, ": ", round(IndicatorTrend2, roundto)
+          "Economy: ", Economy, "\n",
+          "Year: ", Year, "\n", 
+          input$indicator_trend2_economies, ": ", 
+          round(IndicatorTrend2, roundto), "\n",
+          "Reporting level: ", Reporting_level, "\n", 
+          "Welfare type: ", Welfare_type
         )
       )
     ]
@@ -1113,53 +1167,69 @@ dt_trend_plot2 <- reactive({
   
     
   # If 'Both' --------------------------------------------
-  if(input$plot_which_trend == "Both"){
+  if (input$plot_which_trend == "Both") {
         
     indicator_trend2 <- input$indicator_trend2_both
-    if(!indicator_trend2 %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if (!indicator_trend2 %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")) {
     indicator_trend2 <- switch(
       indicator_trend2,
       "Prosperity Gap"           = "PG",
-      "Mean - Bottom 40"         = "Mean_b40",
+      #"Mean - Bottom 40"         = "Mean_b40",
       "Mean"                     = "Mean",
       "(PG) Inequality"          = "Inequality", 
       "Growth - Prosperity Gap"  = "PG_growth", 
       "Growth - Mean"            = "Mean_growth" , 
-      "Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
+      #"Growth - Mean Bottom 40"  = "Mean_b40_growth" , 
       "Growth - (PG) Inequality" = "Inequality_growth"
     )
     }
-    if(input$lineup_or_survey_trend_interpolated == "Survey"){
-    dt_trend_c2 <- copy(dt_country)
+    if (input$lineup_or_survey_trend_interpolated == "Survey") {
+      dt_trend_c2 <- copy(dt_country)
     } else {
       dt_trend_c2 <- copy(dt_lineup)
     }
     
     dt_trend_c2 <- dt_trend_c2[
       , 
-      .(Economy=Country_name, Year, PG, Inequality, Mean, Region_code, Survey_comparability, PG_growth, Mean_growth, Inequality_growth)
+      .(Economy = Country_name, 
+        Year, 
+        PG, 
+        Inequality, 
+        Mean,
+        Region_code, 
+        Survey_comparability, 
+        PG_growth, 
+        Mean_growth, 
+        Inequality_growth)
     ]
     dt_trend_r2 <- copy(dt_region)
     dt_trend_r2 <- dt_trend_r2[!Region_name == "Global"]
     dt_trend_r2 <- dt_trend_r2[
       , 
-      .(Economy=Region_name, Year, PG, Inequality, Mean, Region_code, Survey_comparability = 1L, PG_growth, Mean_growth, Inequality_growth)
+      .(Economy = Region_name, 
+        Year, 
+        PG, 
+        Inequality, 
+        Mean, 
+        Region_code, 
+        Survey_comparability = 1L, 
+        PG_growth, 
+        Mean_growth, 
+        Inequality_growth)
     ]
     
-    dt_trend_plot2 <- rbindlist(
-      list(
-        dt_trend_c2, 
-        dt_trend_r2
-      )
-    )
+    dt_trend_plot2 <- rowbind(
+      dt_trend_c2, 
+      dt_trend_r2)
     
     setnames(
       dt_trend_plot2, 
       old = c(indicator_trend2), 
-      new = c("IndicatorTrend2")
-    )
+      new = c("IndicatorTrend2"))
   
-    if(grepl(pattern = "Growth", x = input$indicator_trend2_both) == TRUE){
+    if (grepl(pattern = "Growth", x = input$indicator_trend2_both) == TRUE) {
       roundto <- 3
     } else{
       roundto <- 2
@@ -1168,11 +1238,9 @@ dt_trend_plot2 <- reactive({
       ,
       text_tooltip := (
         paste0(
-          "Economy: "                     , Economy, "\n",
-          "Year: "                        , Year,
-          "\n"                            , input$indicator_trend2_both, ": ", round(IndicatorTrend2, roundto)
-        )
-      )
+          "Economy: ", Economy, "\n",
+          "Year: " , Year, "\n" , 
+          input$indicator_trend2_both, ": ", round(IndicatorTrend2, roundto)))
     ]
     
     # Filter regions
@@ -1183,7 +1251,7 @@ dt_trend_plot2 <- reactive({
     }
   
     # Filter years
-  if(input$all_years_plot_trend == "Custom"){
+  if (input$all_years_plot_trend == "Custom") {
     
     dt_trend_plot2 <- dt_trend_plot2[
       Year >= as.numeric(input$select_initial_year_trend) & Year <= as.numeric(input$select_final_year_trend)
@@ -1211,9 +1279,9 @@ Column {.tabset .tabset-fade}
 renderPlotly({
 
   # give name
-  if(input$plot_which_trend == "Regional aggregates"){
+  if (input$plot_which_trend == "Regional aggregates") {
     ind_name <- input$indicator_trend1_regionalaggregates
-  } else if(input$plot_which_trend == "Selected economies"){
+  } else if (input$plot_which_trend == "Selected economies") {
     ind_name <- input$indicator_trend1_economies
   } else {
     ind_name <- input$indicator_trend1_both
@@ -1228,20 +1296,20 @@ first_points = first_points[dt_trend_plot1, on = .(Economy), nomatch = 0]
 
 
 # Log transformations
-if(
+if (
   input$log_y_3_fig1_regionalaggregates == TRUE & 
   input$plot_which_trend == "Regional aggregates" & 
   grepl(pattern = "headcount", input$indicator_trend1_regionalaggregates) == FALSE & 
   grepl(pattern = "Growth", input$indicator_trend1_regionalaggregates) == FALSE
-){
+) {
   transformation <- function(x) log(x)
 } else if (
   input$log_y_3_fig1_economies == TRUE & 
   input$plot_which_trend == "Selected economies" &
   grepl(pattern = "headcount", input$indicator_trend1_economies) == FALSE & 
   grepl(pattern = "Growth", input$indicator_trend1_economies) == FALSE
-){
-  transformation <- function(x) log(x)
+) {
+ transformation <- function(x) log(x)
 } else if (
   input$log_y_3_fig1_both == TRUE & 
   input$plot_which_trend == "Both" & 
@@ -1259,7 +1327,7 @@ tp1 <- ggplot(dt_trend_plot1) +
   theme(legend.position = "none")
 
 # Add geom_point and geom_line
-if(input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regional aggregates"){
+#if (input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regional aggregates") {
   tp1 <- tp1 +
   geom_line(
     aes(
@@ -1270,23 +1338,29 @@ if(input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regiona
     ), 
     alpha    = 0.8
   )
-} else {
+#} #else {
   
-  tp1 <- tp1 +
-  geom_line(
-    aes(
-      x      = round(Year),
-      y      = transformation(IndicatorTrend1),
-      color  = Economy,
-      group  = Survey_comparability
-    ), 
-    alpha    = 0.8
-  )
-}
+#   tp1 <- tp1 +
+#   geom_line(
+#     aes(
+#       x      = round(Year),
+#       y      = transformation(IndicatorTrend1),
+#       color  = Economy,
+#       group  = Survey_comparability
+#     ), 
+#     alpha    = 0.8
+#   )
+# }
 
 tp1 <- tp1 +
-  geom_point(aes(x = round(Year), y = transformation(IndicatorTrend1), color = Economy, text = text_tooltip), size = 1.5, alpha = 0.9) +
-  scale_x_continuous(expand = expand_scale(mult = c(0.2, 0.2)))+
+  geom_point(aes(x     = round(Year), 
+                 y     = transformation(IndicatorTrend1), 
+                 color = Economy, 
+                 text  = text_tooltip), 
+             size  = 1.5, 
+             alpha = 0.9) +
+  scale_x_continuous(expand  = expand_scale(mult = c(0.2, 
+                                                     0.2))) +
   scale_color_brewer(palette = "Dark2")
 
 # Add geom_point and geom_line
@@ -1332,7 +1406,8 @@ if(grepl(pattern = "Growth", x = ind_name) == TRUE){
     )
   
 }
-tp1 <- ggplotly(tp1, tooltip = "text")
+tp1 <- ggplotly(tp1, 
+                tooltip = "text")
 
 
 
@@ -1436,7 +1511,7 @@ tp1 <- ggplot(dt_trend_plot1) +
 
 # Add geom_point and geom_line
 # Add geom_point and geom_line
-if(input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regional aggregates"){
+#if(input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regional aggregates"){
   tp1 <- tp1 +
   geom_line(
     aes(
@@ -1447,19 +1522,19 @@ if(input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regiona
     ), 
     alpha    = 0.8
   )
-} else {
+# } else {
   
-  tp1 <- tp1 +
-  geom_line(
-    aes(
-      x      = round(Year),
-      y      = transformation(IndicatorTrend1),
-      color  = Economy,
-      group  = Survey_comparability
-    ), 
-    alpha    = 0.8
-  )
-}
+#   tp1 <- tp1 +
+#   geom_line(
+#     aes(
+#       x      = round(Year),
+#       y      = transformation(IndicatorTrend1),
+#       color  = Economy,
+#       group  = Survey_comparability
+#     ), 
+#     alpha    = 0.8
+#   )
+# }
 tp1 <- tp1 +
   geom_point(aes(x = round(Year), y = transformation(IndicatorTrend1), color = Economy, text = text_tooltip), size = 1.5, alpha = 0.9) +
   scale_x_continuous(expand = expand_scale(mult = c(0.2, 0.2)))+
@@ -1562,7 +1637,7 @@ tp2 <- ggplot(dt_trend_plot2) +
   theme(legend.position = "none")
 
 # Add geom_point and geom_line
-if(input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regional aggregates"){
+#if(input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regional aggregates"){
   tp2 <- tp2 +
   geom_line(
     aes(
@@ -1573,19 +1648,19 @@ if(input$lineup_or_survey_trend == "Survey" | input$plot_which_trend == "Regiona
     ), 
     alpha    = 0.8
   )
-} else {
-  
-  tp2 <- tp2 +
-  geom_line(
-    aes(
-      x      = round(Year),
-      y      = transformation(IndicatorTrend2),
-      color  = Economy,
-      group  = Survey_comparability
-    ), 
-    alpha    = 0.8
-  )
-}
+# } else {
+#   
+#   tp2 <- tp2 +
+#   geom_line(
+#     aes(
+#       x      = round(Year),
+#       y      = transformation(IndicatorTrend2),
+#       color  = Economy,
+#       group  = Survey_comparability
+#     ), 
+#     alpha    = 0.8
+#   )
+# }
 tp2 <- tp2 +
   geom_point(
     aes(
@@ -1832,13 +1907,6 @@ conditionalPanel(
               multiple = TRUE)
 )
 
-# Render download button
-#downloadButton("downloadData", "Download CSV")
-
-downloadButtonRmd(
-  outputId = "DownloadButtonBarchart", 
-  label = "CSV"
-)
 
 
 ```
@@ -2126,17 +2194,6 @@ if(input$level_or_growth_decomposition == "Level"){
 
 
 
-output$DownloadButtonBarchart <- downloadHandler(
-  filename = function() {
-    paste("prosperity-gap-decomposition", Sys.Date(), ".csv", sep = "")
-  },
-  content = function(file) {
-    write.csv(
-      dt_barchart()
-      , file)
-  }
-)
-
 
 
 ```
@@ -2155,7 +2212,7 @@ output$DownloadButtonBarchart <- downloadHandler(
 </p>
 
 
-Change over Time
+Change
 ===========================================================
 
 
@@ -2182,7 +2239,7 @@ selectInput("plot_which_change",
 
 ## Select Indicator
 conditionalPanel(
-  condition = "input.plot_which_change == 'Regional aggregates'", 
+  condition = 'input.plot_which_change == "Regional aggregates" ', 
   selectInput(
     "indicator_region_change", 
     label    = "Select indicator:", 
@@ -2196,14 +2253,13 @@ conditionalPanel(
   )
 )
 conditionalPanel(
-  condition = "input.plot_which_change == 'Countries'", 
+  condition = 'input.plot_which_change == "Countries"', 
   selectInput(
     "indicator_country_change", 
     label    = "Select indicator:", 
     choices  = c(
       "Prosperity Gap", 
       "Mean", 
-      "Mean - Bottom 40",
       "(PG) Inequality"
     ), 
     selected = "Prosperity Gap", 
@@ -2216,7 +2272,7 @@ conditionalPanel(
 
 ## Select initial year
 conditionalPanel(
-  condition  = "input.plot_which_change == 'Regional aggregates'", 
+  condition  = "input.plot_which_change = 'Regional aggregates'", 
   selectInput(
     "initial_year_region_change",
     label    = "Initial year:",
@@ -2228,7 +2284,7 @@ conditionalPanel(
   )
 )
 conditionalPanel(
-  condition  = "input.plot_which_change == 'Countries'", 
+  condition  = "input.plot_which_change = 'Countries'", 
   selectInput(
     "initial_year_country_change", 
     label    = "Initial year:",
@@ -2260,27 +2316,23 @@ conditionalPanel(
 
 
 conditionalPanel(
-  condition = "input.plot_which_change == 'Countries'", 
+  condition = "input.plot_which_change == 'Countries'",
   selectInput(
-  "do_not_plot", 
-  label    = "Remove from plot:", 
+  "do_not_plot",
+  label    = "Remove from plot:",
   choices  = c(
-    countries_lookup$Region_name |> 
-      sort() |> 
-      unique(), 
-    countries_lookup$Country_name |> 
-      sort() |> 
+    countries_lookup$Region_name |>
+      sort() |>
+      unique(),
+    countries_lookup$Country_name |>
+      sort() |>
       unique()
-  ), 
+  ),
   selected = NULL,
   multiple = TRUE
 )
 )
 
-downloadButtonRmd(
-  outputId = "DownloadButtonChange", 
-  label = "csv"
-)
 
 ```
 
@@ -2298,7 +2350,9 @@ dt_use <- reactive({
     
     # indicator ---------------------------------
     indicator_change <- input$indicator_region_change
-    if(!indicator_change %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if(!indicator_change %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")){
     indicator_change <- switch(
       indicator_change,
       "Prosperity Gap"   = "PG",
@@ -2339,8 +2393,9 @@ dt_use <- reactive({
     dt_use <- joyn::merge(
       x     = dt_1, 
       y     = dt_2, 
-      yvars = T, 
-      by    = "Region_name"
+      y_vars_to_keep = T, 
+      by    = "Region_name",
+      reportvar = FALSE
     )
     
     # Create vars -------------------------------
@@ -2364,10 +2419,10 @@ dt_use <- reactive({
         AnnualizedChange = round(Change/ChangeYears, 2)
       )
     ]
-    dt_use[
-      ,
-      report := NULL
-    ]
+    # dt_use[
+    #   ,
+    #   report := NULL
+    # ]
 
 
     dt_use[, ChangeColor := ifelse(Change>0, "Increase", "Decrease")]
@@ -2382,7 +2437,7 @@ dt_use <- reactive({
     dt_use[, Region_name := factor(Region_name, levels = Region_name[order(Indicator1)])]
 
     
-  } else if( input$plot_which_change == "Countries"){
+  } else if (input$plot_which_change == "Countries"){
     # indicator ---------------------------------
     if(input$indicator_country_change == "(PG) Inequality"){
       indicator <- "Inequality"
@@ -2407,6 +2462,8 @@ dt_use <- reactive({
     !(Country_name %chin% deselected_countries)
   ]
   # dt_use
+  dt_use <- dt_use[, !("Region_name.y")]  # Remove Region_name.y
+setnames(dt_use, "Region_name.x", "Region_name")  # Rename Region_name.x to Region_name
   # Filter years ----
   dt_use <- dt_use[
     Year == as.numeric(input$initial_year_country_change) | Year == (as.numeric(input$initial_year_country_change) + as.numeric(input$interval_change))
@@ -2446,12 +2503,14 @@ renderPlotly({
     
     # indicator ---------------------------------
     indicator_change <- input$indicator_country_change
-    if(!indicator_change %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if(!indicator_change %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")){
     indicator_change <- switch(
       indicator_change,
       "Prosperity Gap"   = "PG",
       "Mean"             = "Mean",
-      "Mean - Bottom 40" = "Mean_b40",
+      #"Mean - Bottom 40" = "Mean_b40",
       "(PG) Inequality"       = "Inequality"
     )
     }
@@ -2460,7 +2519,9 @@ renderPlotly({
     
     # indicator ---------------------------------
     indicator_change <- input$indicator_region_change
-    if(!indicator_change %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+    if(!indicator_change %chin% c("PG", 
+                                  #"Mean_b40", 
+                                  "Mean", "Inequality")){
     indicator_change <- switch(
       indicator_change,
       "Prosperity Gap"   = "PG",
@@ -2596,19 +2657,6 @@ pp
 })
 
 
-
-output$DownloadButtonChange <- downloadHandler(
-  filename = function() {
-    paste("prosperity-gap-change", Sys.Date(), ".csv", sep = "")
-  },
-  content = function(file) {
-    write.csv(
-      dt_use()
-      , file)
-  }
-)
-
-
 ```
 
 
@@ -2640,7 +2688,7 @@ Column {.tabset data-width=200}
 
 
 
-Scatterplot of Indicators
+Scatterplot 
 ===========================================================
 
 
@@ -2655,7 +2703,7 @@ selectInput("ineq_indicatorX",
             choices = c(
               "Prosperity Gap",
               "Mean", 
-              "Mean - Bottom 40", 
+              #"Mean - Bottom 40", 
               "(PG) Inequality"
             ),
             selected = "Mean")
@@ -2665,7 +2713,7 @@ selectInput("ineq_indicatorY",
             choices = c(
               "Prosperity Gap",
               "Mean", 
-              "Mean - Bottom 40", 
+              #"Mean - Bottom 40", 
               "(PG) Inequality"
             ),
             selected = "Prosperity Gap")
@@ -2769,11 +2817,6 @@ checkboxInput("add_line",
               value = FALSE)
 
 
-downloadButtonRmd(
-  outputId = "DownloadButtonScatterplot",
-  label = "CSV"
-)
-
 ```
 
 
@@ -2872,23 +2915,27 @@ dt_use_sp <- reactive({
   # Change names of selected indicators
     # Change the indicator values
   ineq_indic_X <- input$ineq_indicatorX
-  if(!ineq_indic_X %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+  if(!ineq_indic_X %chin% c("PG", 
+                            #"Mean_b40", 
+                            "Mean", "Inequality")){
 
     ineq_indic_X <- switch(
       ineq_indic_X,
       "Prosperity Gap"   = "PG",
-      "Mean - Bottom 40" = "Mean_b40",
+      #"Mean - Bottom 40" = "Mean_b40",
       "Mean"             = "Mean",
       "(PG) Inequality"       = "Inequality"
     )
   }
   ineq_indic_Y <- input$ineq_indicatorY
-  if(!ineq_indic_Y %chin% c("PG", "Mean_b40", "Mean", "Inequality")){
+  if(!ineq_indic_Y %chin% c("PG", 
+                            #"Mean_b40", 
+                            "Mean", "Inequality")){
 
     ineq_indic_Y <- switch(
       ineq_indic_Y,
       "Prosperity Gap"   = "PG",
-      "Mean - Bottom 40" = "Mean_b40",
+      #"Mean - Bottom 40" = "Mean_b40",
       "Mean"             = "Mean",
       "(PG) Inequality"       = "Inequality"
     )
@@ -3191,16 +3238,6 @@ sp1_plotly
 
 
 
-output$DownloadButtonScatterplot <- downloadHandler(
-  filename = function() {
-    paste("prosperity-gap-scatterplot", Sys.Date(), ".csv", sep = "")
-  },
-  content = function(file) {
-    write.csv(
-      dt_country
-      , file)
-  }
-)
 
 
 
@@ -3221,7 +3258,7 @@ output$DownloadButtonScatterplot <- downloadHandler(
 
 
 
-Table of Indicators
+Table
 ===========================================================
 
 
@@ -3267,7 +3304,7 @@ conditionalPanel(
             choices = c(
               "Prosperity Gap",
               "Mean", 
-              "Mean - Bottom 40", 
+              #"Mean - Bottom 40", 
               "(PG) Inequality"
             ),
             selected =  c(
@@ -3348,15 +3385,6 @@ observeEvent(input$select_initial_year_table,
 })
 
 
-# Render download button
-#downloadButton("downloadData", "Download CSV")
-
-downloadButtonRmd(
-  outputId = "DownloadButtonTable", 
-  label = "CSV"
-)
-
-
 
 
 
@@ -3398,7 +3426,7 @@ ineq_indicators <- "Prosperity Gap"
 dt_indicators[, ineq_indicators := switch(
   ineq_indicators,
   "Prosperity Gap"        = "PG",
-  "Mean - Bottom 40"      = "Mean_b40",
+  #"Mean - Bottom 40"      = "Mean_b40",
   "Mean"                  = "Mean",
   "(PG) Inequality"       = "Inequality"
 ), by = ineq_indicators]
@@ -3483,7 +3511,7 @@ ineq_indicators <- dt_indicators$ineq_indicators
   dt_indicators[, ineq_indicators := switch(
     ineq_indicators,
     "Prosperity Gap"        = "PG",
-    "Mean - Bottom 40"      = "Mean_b40",
+    #"Mean - Bottom 40"      = "Mean_b40",
     "Mean"                  = "Mean",
     "(PG) Inequality"       = "Inequality"
   ), by = ineq_indicators]
@@ -3665,22 +3693,12 @@ t <- layout(
 })
 
 
-output$DownloadButtonTable <- downloadHandler(
-  filename = function() {
-    paste("prosperity-gap-table", Sys.Date(), ".csv", sep = "")
-  },
-  content = function(file) {
-    write.csv(table(), file)
-  }
-)
-
-
 
 ```
 
 
 
-About and Definitions {#tab_about}
+About {#tab_about}
 ===========================================================
 
 Column {.tabset}
@@ -3690,6 +3708,8 @@ Column {.tabset}
 
 <!-- {data-width=500} -->
 <p style='text-align:justify;'>This dashboard provides a set of interactive visualizations focused on the *Prosperity Gap* and associated indicators. The Prosperity Gap is the average factor by which incomes need to be multiplied to bring everyone in the society to the prosperity standard of \$25 daily income expressed in 2017 PPPs. \$25 a day is close to the poverty line of a typical high-income country. A Prosperity Gap of 5 implies that incomes in that society need to be increased on average 500\% for everyone to reach the \$25/day threshold. Put differently, the typical person would have to work for 5 days to earn the same amount as a person at the poverty line in rich countries would earn in a day.</p>
+
+Estimates after 2022 are nowcasted. For details see PIP's nowcasting page.
 
 <p style='text-align:justify;'>Other indicators include the mean of the distribution, the mean of the bottom 40% of the distribution, an inequality measure corresponding to the Prosperity Gap— *(PG) Inequality* —measure, and headcount poverty at \$2.15, \$3.65, and \$6.85 a day. (PG) Inequality is the average factor by which incomes need to be multiplied to bring everyone in the society to the mean income of that society. The dashboard can be used to compare the measures of a country, region, or the world across time or between each other.</p>
 
