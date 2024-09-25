@@ -70,7 +70,7 @@ library("collapse")
 ```{r data-import, include=FALSE}
 
 url_data     <- "https://github.com/PIP-Technical-Team/prosperity_gap_data/"
-url_raw_file <- "https://raw.githubusercontent.com/PIP-Technical-Team/prosperity_gap_data/main/"
+url_raw_file <- "https://raw.githubusercontent.com/PIP-Technical-Team/prosperity_gap_data/dev/"
 #my_token     <- Sys.getenv("GITHUB_PAT")
 
 read_data <- function(file, 
@@ -132,7 +132,7 @@ dt_headcount_survey <- left_join(x = dt_headcount_survey,
                                            Year, 
                                            Welfare_type, 
                                            Reporting_level), 
-                                 by = c("Country_code", "Year"), 
+                                 by = c("Country_code", "Year", "Reporting_level", "Welfare_type"), 
                                  reportvar = FALSE)
 dt_headcount_lineup <- left_join(x = dt_headcount_lineup,
                                  y = pipr::get_stats(fill_gaps = T) |> 
@@ -142,7 +142,7 @@ dt_headcount_lineup <- left_join(x = dt_headcount_lineup,
                                            reporting_level = Reporting_level) |> 
                                    fselect(Country_code, Year, Welfare_type, Reporting_level) |> 
                                    fsubset(!(Country_code %in% c("IND", "CHN") & !Reporting_level == "national")),
-                                 by = c("Country_code", "Year"),
+                                 by = c("Country_code", "Year", "Reporting_level", "Welfare_type"),
                                  reportvar = FALSE) |> 
   fmutate(Survey_comparability = paste0(Reporting_level, Welfare_type))
 
