@@ -3708,7 +3708,7 @@ Column {.tabset}
 ### About Page {#About}
 
 <!-- {data-width=500} -->
-<p style='text-align:justify;'>This dashboard provides a set of interactive visualizations focused on the *Prosperity Gap* and associated indicators. The Prosperity Gap is the average factor by which incomes need to be multiplied to bring everyone in the society to the prosperity standard of \$25 daily income expressed in 2017 PPPs. \$25 a day is close to the poverty line of a typical high-income country. A Prosperity Gap of 5 implies that incomes in that society need to be increased on average 500\% for everyone to reach the \$25/day threshold. Put differently, the typical person would have to work for 5 days to earn the same amount as a person at the poverty line in rich countries would earn in a day.</p>
+<p style='text-align:justify;'>This dashboard provides a set of interactive visualizations focused on the *Prosperity Gap* and associated indicators. The Prosperity Gap is the average factor by which incomes need to be multiplied to bring everyone in the society to the prosperity standard of \$25 daily income expressed in 2017 PPPs. A Prosperity Gap of 5 implies that incomes in that society need to be increased on average 500\% for everyone to reach the \$25/day threshold. Put differently, the typical person would have to work for 5 days to earn the same amount as a person at the poverty line in rich countries would earn in a day.</p>
 
 Estimates after 2022 are nowcasted. For details see PIP's nowcasting page.
 
