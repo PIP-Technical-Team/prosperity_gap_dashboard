@@ -3708,7 +3708,7 @@ Column {.tabset}
 ### About Page {#About}
 
 <!-- {data-width=500} -->
-<p style='text-align:justify;'>This dashboard provides a set of interactive visualizations focused on the *Prosperity Gap* and associated indicators. The Prosperity Gap is the average factor by which incomes need to be multiplied to bring everyone in the society to the prosperity standard of \$25 daily income expressed in 2017 PPPs. A Prosperity Gap of 5 implies that incomes in that society need to be increased on average 500\% for everyone to reach the \$25/day threshold. Put differently, the typical person would have to work for 5 days to earn the same amount as a person at the poverty line in rich countries would earn in a day.</p>
+<p style='text-align:justify;'>This dashboard provides a set of interactive visualizations focused on the *Prosperity Gap* and associated indicators. The Prosperity Gap is the average factor by which incomes need to be multiplied to bring everyone in the society to the prosperity standard of \$28 daily income expressed in 2017 PPPs. A Prosperity Gap of 5 implies that incomes in that society need to be increased on average 500\% for everyone to reach the \$28/day threshold. The global prosperity standard is set at $28 per person per day—roughly equal to the average per capita household income at the point where countries transition from upper-middle-income to high-income status, according to the World Bank’s income classification (Kraay et al. 2023).</p>
 
 Estimates after 2022 are nowcasted. For details see PIP's nowcasting page.
 
@@ -3730,7 +3730,7 @@ Estimates after 2022 are nowcasted. For details see PIP's nowcasting page.
 <span class="underline">Indicators:</span>
 
 \newline
-<p style='text-align:justify;'> *Prosperity Gap* - the average factor by which incomes need to be multiplied to bring everyone in the society to the prosperity standard of $25 daily income expressed in 2017 PPPs. </p>
+<p style='text-align:justify;'> *Prosperity Gap* - the average factor by which incomes need to be multiplied to bring everyone in the society to the prosperity standard of $28 daily income expressed in 2017 PPPs. </p>
 
 <p style='text-align:justify;'> *Mean* - the daily per person mean income of the whole distribution expressed in 2017 PPPs. </p>
 
