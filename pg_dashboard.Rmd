@@ -147,12 +147,17 @@ dt_headcount_lineup <- left_join(x = dt_headcount_lineup,
                                  reportvar = FALSE) |>
   fmutate(Survey_comparability = paste0(Country_code, Reporting_level, Welfare_type))
 
+pipversion <- pipr::get_versions() |> 
+  pull(version) |> 
+  _[][[1]] |> 
+  substr(start = 1, 
+         13)
 ```
 
 
 ```{r load-functions, include=FALSE}
 # Source text to include on plots
-source_text <- paste("Kraay ⓡ al. (2023) updated based on Poverty and Inequality Platform (version 20240919_2017)")
+source_text <- paste0("Kraay ⓡ al. (2023) updated based on Poverty and Inequality Platform (version ", pipversion, ")")
 
 title_function <- function(ind){
   
@@ -170,17 +175,17 @@ title_function <- function(ind){
   )
   
   title_use_vec <- c(
-    "Mean (daily per capita, 2017 $PPP)", 
-    #"Mean of bottom 40 (daily pc, 2017 $PPP)",
+    "Mean (daily per capita, 2021 $PPP)", 
+    #"Mean of bottom 40 (daily pc, 2021 $PPP)",
     "Prosperity Gap", 
     "(PG) Inequality", 
     "Growth in Prosperity Gap", 
-    "Growth in Mean (daily p.c., 2017 $PPP)", 
-    #"Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
+    "Growth in Mean (daily p.c., 2021 $PPP)", 
+    #"Growth in Mean of bottom 40 (daily pc, 2021 $PPP)",
     "Growth in (PG) Inequality", 
-    "Poverty headcount - $2.15 daily p.c.",
-    "Poverty headcount - $3.65 daily p.c.", 
-    "Poverty headcount - $6.85 daily p.c."
+    "Poverty headcount - $3.00 daily p.c.",
+    "Poverty headcount - $4.20 daily p.c.", 
+    "Poverty headcount - $8.30 daily p.c."
   )
   
   use_title <- title_use_vec[
@@ -204,23 +209,23 @@ title_function2 <- function(ind){
     "Growth - Mean", 
     #"Growth - Mean Bottom 40",
     "Growth - (PG) Inequality", 
-    "Poverty headcount - $2.15",
-    "Poverty headcount - $3.65",
-    "Poverty headcount - $6.85"
+    "Poverty headcount - $3.00",
+    "Poverty headcount - $4.20",
+    "Poverty headcount - $8.30"
   )
   
   title_use_vec <- c(
     "Prosperity Gap",
-    "Mean (daily p.c., 2017 $PPP)", 
+    "Mean (daily p.c., 2021 $PPP)", 
     #"Mean of bottom 40 (daily p.c.)", 
     "(PG) Inequality", 
     "Growth in Prosperity Gap", 
-    "Growth in Mean (daily pc, 2017 $PPP)", 
-    #"Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
+    "Growth in Mean (daily pc, 2021 $PPP)", 
+    #"Growth in Mean of bottom 40 (daily pc, 2021 $PPP)",
     "Growth in (PG) Inequality", 
-    "Poverty headcount - $2.15 (daily p.c.)",
-    "Poverty headcount - $3.65 (daily p.c.)", 
-    "Poverty headcount - $6.85 (daily p.c.)"
+    "Poverty headcount - $3.00 (daily p.c.)",
+    "Poverty headcount - $4.20 (daily p.c.)", 
+    "Poverty headcount - $8.30 (daily p.c.)"
   )
   
   use_title <- title_use_vec[
@@ -244,23 +249,23 @@ title_function_y_2 <- function(ind){
     "Growth - Mean", 
     #"Growth - Mean Bottom 40",
     "Growth - (PG) Inequality", 
-    "Poverty headcount - $2.15",
-    "Poverty headcount - $3.65",
-    "Poverty headcount - $6.85"
+    "Poverty headcount - $3.00",
+    "Poverty headcount - $4.20",
+    "Poverty headcount - $8.30"
   )
   
   title_use_vec <- c(
     "Prosperity Gap \n (Lower values correspond to better outcomes)",
-    "Mean (daily p.c., 2017 $PPP)", 
+    "Mean (daily p.c., 2021 $PPP)", 
     #"Mean of bottom 40 (daily p.c.)", 
     "(PG) Inequality", 
     "Growth in Prosperity Gap", 
-    "Growth in Mean (daily pc, 2017 $PPP)", 
-    #"Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
+    "Growth in Mean (daily pc, 2021 $PPP)", 
+    #"Growth in Mean of bottom 40 (daily pc, 2021 $PPP)",
     "Growth in (PG) Inequality", 
-    "Poverty headcount - $2.15 (daily p.c.)",
-    "Poverty headcount - $3.65 (daily p.c.)", 
-    "Poverty headcount - $6.85 (daily p.c.)"
+    "Poverty headcount - $3.00 (daily p.c.)",
+    "Poverty headcount - $4.20 (daily p.c.)", 
+    "Poverty headcount - $8.30 (daily p.c.)"
   )
   
   use_title <- title_use_vec[
@@ -291,17 +296,17 @@ title_function_y <- function(ind){
   )
   
   title_use_vec <- c(
-    "Mean (daily per capita, 2017 $PPP)", 
-    #"Mean of bottom 40 (daily pc, 2017 $PPP)",
+    "Mean (daily per capita, 2021 $PPP)", 
+    #"Mean of bottom 40 (daily pc, 2021 $PPP)",
     "Prosperity Gap \n (Lower values correspond to better outcomes)", 
     "(PG) Inequality", 
     "Growth in Prosperity Gap", 
-    "Growth in Mean (daily p.c., 2017 $PPP)", 
-    #"Growth in Mean of bottom 40 (daily pc, 2017 $PPP)",
+    "Growth in Mean (daily p.c., 2021 $PPP)", 
+    #"Growth in Mean of bottom 40 (daily pc, 2021 $PPP)",
     "Growth in (PG) Inequality", 
-    "Poverty headcount - $2.15 daily p.c.",
-    "Poverty headcount - $3.65 daily p.c.", 
-    "Poverty headcount - $6.85 daily p.c."
+    "Poverty headcount - $3.00 daily p.c.",
+    "Poverty headcount - $4.20 daily p.c.", 
+    "Poverty headcount - $8.30 daily p.c."
   )
   
   use_title <- title_use_vec[
@@ -614,7 +619,7 @@ conditionalPanel(
               #"Growth - Mean", 
               #"Growth - Mean Bottom 40",
               #"Growth - (PG) Inequality", 
-              "Poverty headcount - $2.15", 
+              "Poverty headcount - $", 
               "Poverty headcount - $3.65", 
               "Poverty headcount - $6.85"
              ),
@@ -669,9 +674,9 @@ conditionalPanel(
               #"Growth - Mean", 
               #"Growth - Mean Bottom 40",
               #"Growth - (PG) Inequality", 
-              "Poverty headcount - $2.15", 
-              "Poverty headcount - $3.65", 
-              "Poverty headcount - $6.85"
+              "Poverty headcount - $3.00", 
+              "Poverty headcount - $4.20", 
+              "Poverty headcount - $8.30"
              ),
             selected = "Mean")
 )
@@ -881,9 +886,9 @@ dt_trend_plot1 <- reactive({
       "Growth - Prosperity Gap"   = "PG_growth", 
       "Growth - Mean"             = "Mean_growth" , 
       "Growth - (PG) Inequality"  = "Inequality_growth", 
-      "Poverty headcount - $2.15" = "Headcount215", 
-      "Poverty headcount - $3.65" = "Headcount365", 
-      "Poverty headcount - $6.85" = "Headcount685")
+      "Poverty headcount - $3.00" = "Headcount215", 
+      "Poverty headcount - $4.20" = "Headcount365", 
+      "Poverty headcount - $8.30" = "Headcount685")
     }
     
     if (grepl(pattern = "headcount", x = input$indicator_trend1_economies) == TRUE ) {
@@ -1113,9 +1118,9 @@ dt_trend_plot2 <- reactive({
       "Growth - Mean"             = "Mean_growth" , 
       #"Growth - Mean Bottom 40"   = "Mean_b40_growth" , 
       "Growth - (PG) Inequality"  = "Inequality_growth", 
-      "Poverty headcount - $2.15" = "Headcount215", 
-      "Poverty headcount - $3.65" = "Headcount365", 
-      "Poverty headcount - $6.85" = "Headcount685"
+      "Poverty headcount - $3.00" = "Headcount215", 
+      "Poverty headcount - $4.20" = "Headcount365", 
+      "Poverty headcount - $8.30" = "Headcount685"
     )
     }
     
@@ -3708,21 +3713,21 @@ Column {.tabset}
 ### About Page {#About}
 
 <!-- {data-width=500} -->
-<p style='text-align:justify;'>This dashboard provides a set of interactive visualizations focused on the *Prosperity Gap* and associated indicators. The Prosperity Gap is the average factor by which incomes need to be multiplied to bring everyone in the society to the prosperity standard of \$28 daily income expressed in 2017 PPPs. A Prosperity Gap of 5 implies that incomes in that society need to be increased on average 500\% for everyone to reach the \$28/day threshold. The global prosperity standard is set at $28 per person per day—roughly equal to the average per capita household income at the point where countries transition from upper-middle-income to high-income status, according to the World Bank’s income classification (Kraay et al. 2023).</p>
+<p style='text-align:justify;'>This dashboard provides a set of interactive visualizations focused on the *Prosperity Gap* and associated indicators. The Prosperity Gap is the average factor by which incomes need to be multiplied to bring everyone in the society to the prosperity standard of \$28 daily income expressed in 2021 PPPs. A Prosperity Gap of 2.8 implies that incomes in that society need to be increased on average 1000\% for everyone to reach the \$28/day threshold. The global prosperity standard is set at $28 per person per day—roughly equal to the average per capita household income at the point where countries transition from upper-middle-income to high-income status, according to the World Bank’s income classification (Kraay et al. 2023).</p>
 
-Estimates after 2022 are nowcasted. For details see PIP's nowcasting page.
+Estimates after 2023 are nowcasted. For details see PIP's nowcasting page.
 
-<p style='text-align:justify;'>Other indicators include the mean of the distribution, the mean of the bottom 40% of the distribution, an inequality measure corresponding to the Prosperity Gap— *(PG) Inequality* —measure, and headcount poverty at \$2.15, \$3.65, and \$6.85 a day. (PG) Inequality is the average factor by which incomes need to be multiplied to bring everyone in the society to the mean income of that society. The dashboard can be used to compare the measures of a country, region, or the world across time or between each other.</p>
+<p style='text-align:justify;'>Other indicators include the mean of the distribution, the mean of the bottom 40% of the distribution, and an inequality measure corresponding to the Prosperity Gap— *(PG) Inequality* —measure. (PG) Inequality is the average factor by which incomes need to be multiplied to bring everyone in the society to the mean income of that society. The dashboard can be used to compare the measures of a country, region, or the world across time or between each other.</p>
 
 <p style='text-align:justify;'>For more details on the Prosperity Gap, see [this blog on its technical properties](https://blogs.worldbank.org/impactevaluations/can-we-have-welfare-index-easy-understand-also-distribution-sensitive), another [blog on how it measures shared prosperity](https://blogs.worldbank.org/developmenttalk/prosperity-gap-proposed-new-indicator-monitor-shared-prosperity), as well as the [technical paper](https://documents.worldbank.org/en/publication/documents-reports/documentdetail/099934305302318791/idu0325015fc0a4d6046420afe405cb6b6a87b0b).</p>
 
-<p style='text-align:justify;'>The underlying data is based on the same household surveys used in the [Poverty and Inequality Platform (PIP)](https://pip.worldbank.org/home) to report global poverty by the World Bank. The estimates in this dashboard are calculated using 1000-point binned distribution derived from the country-level household survey unit record data or grouped data. It is important to note that these estimates are preliminary, as they are estimated on a grouped version of the income distributions instead of the micro data directly. Furthermore, since the Prosperity Gap is sensitive to low values of consumption, additional analytical work is being done to refine an appropriate censoring threshold (currently set at $0.50 per day). Finally, when survey data is missing, the poverty estimates reported in PIP are based on interpolations and extrapolations of the available surveys which requires [additional assumptions](https://datanalytics.worldbank.org/PIP-Methodology/). The regional and global estimates of the Prosperity Gap reported in this dashboard utilize the interpolated country data following the same [methodology](https://datanalytics.worldbank.org/PIP-Methodology/) as PIP. A version of the 1000-point lineup-binned dataset is described in [Mahler ⓡ  al (2022)](https://documents.worldbank.org/en/publication/documents-reports/documentdetail/099250510052241154/idu01d94e70603dc804f990b6130751d75dccb52).</p>
+<p style='text-align:justify;'>The underlying data is based on the same household surveys used in the [Poverty and Inequality Platform (PIP)](https://pip.worldbank.org/home) to report global poverty by the World Bank. The estimates in this dashboard are calculated using 1000-point binned distribution derived from the country-level household survey unit record data or grouped data. It is important to note that these estimates are preliminary, as they are estimated on a grouped version of the income distributions instead of the micro data directly. Furthermore, since the Prosperity Gap is sensitive to low values of consumption, additional analytical work is being done to refine an appropriate censoring threshold (currently set at $0.28 per day). Finally, when survey data is missing, the poverty estimates reported in PIP are based on interpolations and extrapolations of the available surveys which requires [additional assumptions](https://datanalytics.worldbank.org/PIP-Methodology/). The regional and global estimates of the Prosperity Gap reported in this dashboard utilize the interpolated country data following the same [methodology](https://datanalytics.worldbank.org/PIP-Methodology/) as PIP. A version of the 1000-point lineup-binned dataset is described in [Mahler ⓡ  al (2022)](https://documents.worldbank.org/en/publication/documents-reports/documentdetail/099250510052241154/idu01d94e70603dc804f990b6130751d75dccb52).</p>
 
 <p style='text-align:justify;'>When plotting country trends from survey data, any breaks in the trends implies that the surveys are incomparable, for example due to changes in questionnaire design. The visualization of changes over time only includes countries that have a [comparable survey spell](https://datanalytics.worldbank.org/PIP-Methodology/welfareaggregate.html#comparability) over the selected period. </p>
 
 <p style='text-align:justify;'>The term country, used interchangeably with economy, does not imply political independence but refers to any territory for which authorities report separate social or economic statistics. </p>
 
-<p style='text-align:justify;'>Please cite the data as:  “Kraay ⓡ  al (2023) updated using Poverty and Inequality Platform (version 20230919_2017).” .</p>
+<p style='text-align:justify;'>Please cite the data as:  “Kraay ⓡ  al (2023) updated using Poverty and Inequality Platform (version `r pipversion`).” .</p>
 
 
 ### Definitions {#Definitions}
@@ -3730,13 +3735,13 @@ Estimates after 2022 are nowcasted. For details see PIP's nowcasting page.
 <span class="underline">Indicators:</span>
 
 \newline
-<p style='text-align:justify;'> *Prosperity Gap* - the average factor by which incomes need to be multiplied to bring everyone in the society to the prosperity standard of $28 daily income expressed in 2017 PPPs. </p>
+<p style='text-align:justify;'> *Prosperity Gap* - the average factor by which incomes need to be multiplied to bring everyone in the society to the prosperity standard of $28 daily income expressed in 2021 PPPs. </p>
 
-<p style='text-align:justify;'> *Mean* - the daily per person mean income of the whole distribution expressed in 2017 PPPs. </p>
+<p style='text-align:justify;'> *Mean* - the daily per person mean income of the whole distribution expressed in 2021 PPPs. </p>
 
-<p style='text-align:justify;'> *Mean of the bottom 40\%* - the daily per person mean income of the bottom 40% of the distribution expressed in 2017 PPPs.</p>
+<p style='text-align:justify;'> *Mean of the bottom 40\%* - the daily per person mean income of the bottom 40% of the distribution expressed in 2021 PPPs.</p>
 
-<p style='text-align:justify;'> *Prosperity Gap, Inequality (PG Inequality)* - the average factor by which incomes need to be multiplied to bring everyone in the society to the mean income of that society..</p>
+<p style='text-align:justify;'> *Prosperity Gap, Inequality (PG Inequality)* - the average factor by which incomes need to be multiplied to bring everyone in the society to the mean income of that society.</p>
 
 
 <span class="underline">Other variables:</span>
