@@ -126,6 +126,7 @@ dt_headcount_survey <- data_list$hc_survey
 dt_headcount_lineup <- data_list$hc_lineups
 dt_imputed          <- data_list$imputed
 
+
 dt_headcount_survey <- left_join(x = dt_headcount_survey, 
                                  y = dt_country |> 
                                    fselect(Country_code, 
@@ -147,7 +148,7 @@ dt_headcount_lineup <- left_join(x = dt_headcount_lineup,
                                  reportvar = FALSE) |>
   fmutate(Survey_comparability = paste0(Country_code, Reporting_level, Welfare_type))
 
-pipversion <- pipr::get_versions() |> 
+pipversion <- pipr::get_versions(server = "dev") |> 
   pull(version) |> 
   _[][[1]] |> 
   substr(start = 1, 
@@ -169,9 +170,9 @@ title_function <- function(ind){
                     "Inequality_growth", 
                     "Mean_growth", 
                     #"Mean_b40_growth", 
-                    "Headcount215",
-                    "Headcount365",
-                    "Headcount685"
+                    "Headcount3",
+                    "Headcount420",
+                    "Headcount830"
   )
   
   title_use_vec <- c(
@@ -290,9 +291,9 @@ title_function_y <- function(ind){
                     "Inequality_growth", 
                     "Mean_growth", 
                     #"Mean_b40_growth", 
-                    "Headcount215",
-                    "Headcount365",
-                    "Headcount685"
+                    "Headcount3",
+                    "Headcount420",
+                    "Headcount830"
   )
   
   title_use_vec <- c(
@@ -886,9 +887,9 @@ dt_trend_plot1 <- reactive({
       "Growth - Prosperity Gap"   = "PG_growth", 
       "Growth - Mean"             = "Mean_growth" , 
       "Growth - (PG) Inequality"  = "Inequality_growth", 
-      "Poverty headcount - $3.00" = "Headcount215", 
-      "Poverty headcount - $4.20" = "Headcount365", 
-      "Poverty headcount - $8.30" = "Headcount685")
+      "Poverty headcount - $3.00" = "Headcount3", 
+      "Poverty headcount - $4.20" = "Headcount420", 
+      "Poverty headcount - $8.30" = "Headcount830")
     }
     
     if (grepl(pattern = "headcount", x = input$indicator_trend1_economies) == TRUE ) {
@@ -1118,9 +1119,9 @@ dt_trend_plot2 <- reactive({
       "Growth - Mean"             = "Mean_growth" , 
       #"Growth - Mean Bottom 40"   = "Mean_b40_growth" , 
       "Growth - (PG) Inequality"  = "Inequality_growth", 
-      "Poverty headcount - $3.00" = "Headcount215", 
-      "Poverty headcount - $4.20" = "Headcount365", 
-      "Poverty headcount - $8.30" = "Headcount685"
+      "Poverty headcount - $3.00" = "Headcount3", 
+      "Poverty headcount - $4.20" = "Headcount420", 
+      "Poverty headcount - $8.30" = "Headcount830"
     )
     }
     
@@ -2468,8 +2469,8 @@ dt_use <- reactive({
     !(Country_name %chin% deselected_countries)
   ]
   # dt_use
-  dt_use <- dt_use[, !("Region_name.y")]  # Remove Region_name.y
-setnames(dt_use, "Region_name.x", "Region_name")  # Rename Region_name.x to Region_name
+  #dt_use <- dt_use[, !("Region_name.y")]  # Remove Region_name.y
+#setnames(dt_use, "Region_name.x", "Region_name")  # Rename Region_name.x to Region_name
   # Filter years ----
   dt_use <- dt_use[
     Year == as.numeric(input$initial_year_country_change) | Year == (as.numeric(input$initial_year_country_change) + as.numeric(input$interval_change))
@@ -2955,9 +2956,9 @@ dt_use_sp <- reactive({
 
   dt_use_sp[
     ,
-    `Income Group` := incgroup_current
+    `Income Group` := incgroup
   ]
-  #factor(incgroup_current, levels = incgroup_current[order(mean)])]
+  #factor(incgroup, levels = incgroup[order(mean)])]
   # Define tooltip
   dt_use_sp[
     ,
@@ -2965,7 +2966,7 @@ dt_use_sp <- reactive({
       paste0(
         "Economy: ", Country_name, "\n",
         "Region: ", Region_name,  "\n",
-        "Income Group: ", incgroup_current, "\n",
+        "Income Group: ", incgroup, "\n",
         input$ineq_indicatorX, ": ", round(IndicatorX,2),  "\n",
         input$ineq_indicatorY, ": ", round(IndicatorY, 2),  "\n",
         "Survey type: ", str_to_title(Welfare_type), "\n", 
@@ -2976,7 +2977,7 @@ dt_use_sp <- reactive({
 col_vec <- c()
 all_cntr <- dt_use_sp$Country_name
 reg <- dt_use_sp$Region_name
-inc <- dt_use_sp$incgroup_current
+inc <- dt_use_sp$incgroup
 dt <- data.table(all_cntr = all_cntr, reg = reg)
 # Conditionally define 'bla' based on the value of 'Check'
 if (input$color_by == "Region") {
