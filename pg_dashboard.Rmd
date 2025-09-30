@@ -68,6 +68,9 @@ library("collapse")
 ```
 
 ```{r data-import, include=FALSE}
+dt_pipr_fg <- fst::read.fst( 
+               path = fs::path("dt_pipr_fg.fst"))
+pipversion <- qs::qread(file = fs::path("pipversion.qs"))
 
 url_data     <- "https://github.com/PIP-Technical-Team/prosperity_gap_data/"
 url_raw_file <- "https://raw.githubusercontent.com/PIP-Technical-Team/prosperity_gap_data/dev/"
@@ -137,7 +140,7 @@ dt_headcount_survey <- left_join(x = dt_headcount_survey,
                                  reportvar = FALSE) #|> 
   #fmutate(Survey_comparability = paste0(Country_code, Reporting_level, Welfare_type))
 dt_headcount_lineup <- left_join(x = dt_headcount_lineup,
-                                 y = pipr::get_stats(fill_gaps = T) |> 
+                                 y = dt_pipr_fg |> 
                                    frename(country_code    = Country_code,
                                            year            = Year,
                                            welfare_type    = Welfare_type,
@@ -148,11 +151,7 @@ dt_headcount_lineup <- left_join(x = dt_headcount_lineup,
                                  reportvar = FALSE) |>
   fmutate(Survey_comparability = paste0(Country_code, Reporting_level, Welfare_type))
 
-pipversion <- pipr::get_versions(server = "dev") |> 
-  pull(version) |> 
-  _[][[1]] |> 
-  substr(start = 1, 
-         13)
+
 ```
 
 
