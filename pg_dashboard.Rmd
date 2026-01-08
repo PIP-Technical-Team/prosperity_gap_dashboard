@@ -120,14 +120,19 @@ names(data_list) <- c("lineup", "region", "country",
                       "imputed", "hc_lineups", "hc_survey", "countries_lookup")
 
 # DATA OBJECTS ####
-dt_country          <- data_list$country
+dt_country          <- data_list$country |> 
+  fmutate(Survey_grouping      = paste0(Country_code, Reporting_level, Welfare_type))
 dt_region           <- data_list$region
 dt_lineup           <- data_list$lineup |> 
-  fmutate(Survey_comparability = paste0(Country_code, Reporting_level, Welfare_type))
+  fmutate(Survey_comparability = paste0(Country_code, Reporting_level, Welfare_type)) |> 
+  fmutate(Survey_grouping      = Survey_comparability)
 countries_lookup    <- data_list$countries_lookup
-dt_headcount_survey <- data_list$hc_survey 
-dt_headcount_lineup <- data_list$hc_lineups
-dt_imputed          <- data_list$imputed
+dt_headcount_survey <- data_list$hc_survey  #|> 
+  #fmutate(Survey_grouping      = Survey_comparability)
+dt_headcount_lineup <- data_list$hc_lineups #|> 
+  #fmutate(Survey_grouping      = Survey_comparability)
+dt_imputed          <- data_list$imputed #|> 
+  #fmutate(Survey_grouping      = Survey_comparability)
 
 
 dt_headcount_survey <- left_join(x = dt_headcount_survey, 
@@ -149,7 +154,8 @@ dt_headcount_lineup <- left_join(x = dt_headcount_lineup,
                                    fsubset(!(Country_code %in% c("IND", "CHN") & !Reporting_level == "national")),
                                  by = c("Country_code", "Year", "Reporting_level", "Welfare_type"),
                                  reportvar = FALSE) |>
-  fmutate(Survey_comparability = paste0(Country_code, Reporting_level, Welfare_type))
+  fmutate(Survey_comparability = paste0(Country_code, Reporting_level, Welfare_type)) |> 
+  fmutate(Survey_grouping = Survey_comparability)
 
 
 ```
@@ -354,7 +360,7 @@ create_data_imputed_by_countries_two_years_pg <- function(
     old = c(indicator,    "ImputeDistance",  "ImputeDirection"), 
     new = c("Indicator1", "ImputeYears1",    "Impute_Forward1")
   )
-  dt1 <- dt1[, .(Country_name, Year, Indicator1, ImputeYears1, Impute_Forward1, Survey_comparability)]
+  dt1 <- dt1[, .(Country_name, Year, Indicator1, ImputeYears1, Impute_Forward1, Survey_comparability, Survey_grouping)]
   
   dt2 <- dt_use[
     Year == year2_selected
@@ -867,6 +873,7 @@ dt_trend_plot1 <- reactive({
     }
     
     dt_trend_plot1[, Survey_comparability := 1L]
+    dt_trend_plot1[, Survey_grouping := 1L]
 
   }
   
@@ -968,6 +975,7 @@ dt_trend_plot1 <- reactive({
         Mean, 
         Region_code, 
         Survey_comparability, 
+        Survey_grouping,
         PG_growth, 
         Mean_growth, 
         Inequality_growth)
@@ -983,6 +991,7 @@ dt_trend_plot1 <- reactive({
         Mean, 
         Region_code, 
         Survey_comparability = 1L, 
+        Survey_grouping = 1L,
         PG_growth, 
         Mean_growth, 
         Inequality_growth)
@@ -1097,6 +1106,7 @@ dt_trend_plot2 <- reactive({
     }
     
     dt_trend_plot2[, Survey_comparability := 1L]
+    dt_trend_plot2[, Survey_grouping := 1L]
 
   }
   
@@ -1206,6 +1216,7 @@ dt_trend_plot2 <- reactive({
         Mean,
         Region_code, 
         Survey_comparability, 
+        Survey_grouping,
         PG_growth, 
         Mean_growth, 
         Inequality_growth)
@@ -1221,6 +1232,7 @@ dt_trend_plot2 <- reactive({
         Mean, 
         Region_code, 
         Survey_comparability = 1L, 
+        Survey_grouping = 1L,
         PG_growth, 
         Mean_growth, 
         Inequality_growth)
@@ -1340,7 +1352,7 @@ tp1 <- ggplot(dt_trend_plot1) +
       x      = round(Year),
       y      = transformation(IndicatorTrend1),
       color  = Economy,
-      group  = Survey_comparability
+      group  = Survey_grouping
     ), 
     alpha    = 0.8
   )
@@ -1352,7 +1364,7 @@ tp1 <- ggplot(dt_trend_plot1) +
 #       x      = round(Year),
 #       y      = transformation(IndicatorTrend1),
 #       color  = Economy,
-#       group  = Survey_comparability
+#       group  = Survey_grouping
 #     ), 
 #     alpha    = 0.8
 #   )
@@ -1524,7 +1536,7 @@ tp1 <- ggplot(dt_trend_plot1) +
       x      = round(Year),
       y      = transformation(IndicatorTrend1),
       color  = Economy,
-      group  = Survey_comparability
+      group  = Survey_grouping
     ), 
     alpha    = 0.8
   )
@@ -1650,7 +1662,7 @@ tp2 <- ggplot(dt_trend_plot2) +
       x      = round(Year),
       y      = transformation(IndicatorTrend2),
       color  = Economy,
-      group  = Survey_comparability
+      group  = Survey_grouping
     ), 
     alpha    = 0.8
   )
